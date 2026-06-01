@@ -82,6 +82,10 @@
               <i data-lucide="truck"></i>
               <span>Gestão de Veículos</span>
             </button>
+            <button class="nav-item" id="nav-btn-cooperados">
+              <i data-lucide="users"></i>
+              <span>Gestão de Cooperados</span>
+            </button>
           </div>
         </div>
 
@@ -253,6 +257,42 @@
           </table>
         </div>
       </section>
+
+      <!-- CRUD Cooperados Viewport (Initially Hidden) -->
+      <section class="crud-container hidden" id="cooperados-crud-section">
+        <div class="crud-header">
+          <div class="crud-title-area">
+            <h2 class="crud-title">Cadastro de Cooperados</h2>
+            <span class="crud-subtitle">Gerenciamento de cooperados e seus contatos</span>
+          </div>
+          <button class="btn btn-sm" id="btn-new-cooperado" style="width: auto;">
+            <i data-lucide="plus"></i>
+            <span>Novo Cooperado</span>
+          </button>
+        </div>
+
+        <div class="crud-toolbar">
+          <div class="crud-search-wrapper">
+            <i data-lucide="search" class="filter-icon"></i>
+            <input type="text" id="crud-cooperados-search-input" class="filter-input" placeholder="Buscar por nome ou contato...">
+          </div>
+        </div>
+
+        <div class="crud-table-wrapper">
+          <table class="crud-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>IDs de Contato (idContatos)</th>
+                <th style="width: 150px; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="crud-cooperados-tbody">
+              <!-- Rendered dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
       
     </main>
   </section>
@@ -329,6 +369,48 @@
           <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
             <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-vehicle" style="width: auto;">Cancelar</button>
             <button type="submit" class="btn btn-sm" id="btn-save-vehicle" style="width: auto;">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- COOPERADO FORM MODAL -->
+  <div class="modal-backdrop" id="cooperado-modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="cooperado-modal-title">Novo Cooperado</h3>
+        <button class="modal-close" id="cooperado-modal-close">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="cooperado-form">
+          <input type="hidden" id="cooperado-id">
+          
+          <div class="form-group">
+            <label class="form-label" for="cooperado-nome">Nome *</label>
+            <input class="form-input" style="padding-left: 12px;" type="text" id="cooperado-nome" placeholder="Nome Completo do Cooperado" required>
+          </div>
+          
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label">IDs de Contato (Apenas letras e números) *</label>
+            <div class="tags-input-wrapper">
+              <div class="tags-input-row">
+                <input class="form-input" style="padding-left: 12px;" type="text" id="cooperado-contact-input" placeholder="Ex: 4799999999 ou user123" pattern="^[A-Za-z0-9]+$" title="Apenas caracteres alfanuméricos são permitidos (sem espaços, traços ou acentos)">
+                <button type="button" class="btn btn-sm" id="btn-add-contact-tag" style="width: auto; padding: 0 16px;">
+                  <i data-lucide="plus"></i>
+                </button>
+              </div>
+              <div class="tags-display" id="cooperado-contacts-tags-container">
+                <!-- Tags will be dynamically loaded here -->
+              </div>
+            </div>
+          </div>
+          
+          <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-cooperado" style="width: auto;">Cancelar</button>
+            <button type="submit" class="btn btn-sm" id="btn-save-cooperado" style="width: auto;">Salvar</button>
           </div>
         </form>
       </div>

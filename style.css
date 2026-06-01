@@ -1410,3 +1410,81 @@ body {
   padding-right: 36px;
 }
 
+/* Cooperados Contact Tags & Input styling */
+.contact-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.contact-tag {
+  background: var(--accent-bg-glow);
+  color: var(--accent);
+  border: 1px solid var(--border-color);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tags-input-wrapper {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-theme="light"] .tags-input-wrapper {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.tags-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.tags-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
+  border: 1px dashed var(--border-color);
+  align-items: center;
+}
+
+.tag-badge {
+  background: var(--accent);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-badge .btn-remove-tag {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.tag-badge .btn-remove-tag:hover {
+  color: #ffffff;
+}
+
+

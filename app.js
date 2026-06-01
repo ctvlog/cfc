@@ -33,7 +33,9 @@ let appState = {
   vehicles: [],
   cooperados: [],
   veiculosTiposActive: [],
-  vehiclesSearch: ""
+  vehiclesSearch: "",
+  cooperadosSearch: "",
+  cooperadoFormContacts: []
 };
 
 // UI Elements
@@ -81,22 +83,37 @@ const els = {
   sidebarAdminNav: document.getElementById("sidebar-admin-nav"),
   navBtnQueues: document.getElementById("nav-btn-queues"),
   navBtnVehicles: document.getElementById("nav-btn-vehicles"),
+  navBtnCooperados: document.getElementById("nav-btn-cooperados"),
   vehiclesCrudSection: document.getElementById("vehicles-crud-section"),
+  cooperadosCrudSection: document.getElementById("cooperados-crud-section"),
   btnNewVehicle: document.getElementById("btn-new-vehicle"),
+  btnNewCooperado: document.getElementById("btn-new-cooperado"),
   crudSearchInput: document.getElementById("crud-search-input"),
+  crudCooperadosSearchInput: document.getElementById("crud-cooperados-search-input"),
   crudVehiclesTbody: document.getElementById("crud-vehicles-tbody"),
+  crudCooperadosTbody: document.getElementById("crud-cooperados-tbody"),
   vehicleModalBackdrop: document.getElementById("vehicle-modal-backdrop"),
+  cooperadoModalBackdrop: document.getElementById("cooperado-modal-backdrop"),
   vehicleModalTitle: document.getElementById("vehicle-modal-title"),
+  cooperadoModalTitle: document.getElementById("cooperado-modal-title"),
   vehicleModalClose: document.getElementById("vehicle-modal-close"),
+  cooperadoModalClose: document.getElementById("cooperado-modal-close"),
   vehicleForm: document.getElementById("vehicle-form"),
+  cooperadoForm: document.getElementById("cooperado-form"),
   vehicleId: document.getElementById("vehicle-id"),
+  cooperadoId: document.getElementById("cooperado-id"),
   vehiclePlaca: document.getElementById("vehicle-placa"),
+  cooperadoNome: document.getElementById("cooperado-nome"),
   vehiclePlaca2: document.getElementById("vehicle-placa2"),
+  cooperadoContactInput: document.getElementById("cooperado-contact-input"),
   vehiclePlaca3: document.getElementById("vehicle-placa3"),
+  btnAddContactTag: document.getElementById("btn-add-contact-tag"),
+  cooperadoContactsTagsContainer: document.getElementById("cooperado-contacts-tags-container"),
   vehicleCooperado: document.getElementById("vehicle-cooperado"),
   vehicleTipo: document.getElementById("vehicle-tipo"),
   vehicleFrota: document.getElementById("vehicle-frota"),
-  btnCancelVehicle: document.getElementById("btn-cancel-vehicle")
+  btnCancelVehicle: document.getElementById("btn-cancel-vehicle"),
+  btnCancelCooperado: document.getElementById("btn-cancel-cooperado")
 };
 
 // TOAST SYSTEM
@@ -290,7 +307,9 @@ function handleSignOut() {
   // Reset navigation states
   els.navBtnQueues.classList.add("active");
   els.navBtnVehicles.classList.remove("active");
+  els.navBtnCooperados.classList.remove("active");
   els.vehiclesCrudSection.classList.add("hidden");
+  els.cooperadosCrudSection.classList.add("hidden");
   els.queuesViewport.classList.remove("hidden");
   const controlBar = document.querySelector(".control-bar");
   if (controlBar) controlBar.classList.remove("hidden");
@@ -298,6 +317,7 @@ function handleSignOut() {
   // Clear sensitive UI elements
   els.queuesViewport.innerHTML = "";
   els.crudVehiclesTbody.innerHTML = "";
+  els.crudCooperadosTbody.innerHTML = "";
   els.loginEmail.value = "";
   els.loginPass.value = "";
 }
@@ -425,6 +445,7 @@ function setupEventListeners() {
   // Admin Navigation event listeners
   els.navBtnQueues.addEventListener("click", () => switchView("queues"));
   els.navBtnVehicles.addEventListener("click", () => switchView("vehicles"));
+  els.navBtnCooperados.addEventListener("click", () => switchView("cooperados"));
 
   // Vehicle Modal Open/Close
   els.btnNewVehicle.addEventListener("click", () => openVehicleModal());
@@ -443,11 +464,38 @@ function setupEventListeners() {
     renderVehiclesTable();
   });
 
+  // Cooperado Modal Open/Close
+  els.btnNewCooperado.addEventListener("click", () => openCooperadoModal());
+  els.cooperadoModalClose.addEventListener("click", closeCooperadoModal);
+  els.btnCancelCooperado.addEventListener("click", closeCooperadoModal);
+  els.cooperadoModalBackdrop.addEventListener("click", (e) => {
+    if (e.target === els.cooperadoModalBackdrop) closeCooperadoModal();
+  });
+
+  // Contact Tag Addition
+  els.btnAddContactTag.addEventListener("click", addContactTag);
+  els.cooperadoContactInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addContactTag();
+    }
+  });
+
+  // Cooperado Form Submit
+  els.cooperadoForm.addEventListener("submit", handleCooperadoFormSubmit);
+
+  // Cooperado Search Input
+  els.crudCooperadosSearchInput.addEventListener("input", (e) => {
+    appState.cooperadosSearch = e.target.value.toLowerCase().trim();
+    renderCooperadosTable();
+  });
+
   // ESC key to close modal
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       closeModal();
       closeVehicleModal();
+      closeCooperadoModal();
     }
   });
 }
@@ -920,55 +968,62 @@ function updateAutoRefreshUI() {
 // ==========================================
 
 function switchView(view) {
-  if (view === "vehicles" && !appState.isAdmin) {
-    Toast.show("Acesso Negado", "Apenas administradores podem acessar a gestão de veículos.", "error");
+  if ((view === "vehicles" || view === "cooperados") && !appState.isAdmin) {
+    Toast.show("Acesso Negado", "Apenas administradores possuem este acesso.", "error");
     return;
   }
   
   appState.currentView = view;
   const controlBar = document.querySelector(".control-bar");
   
+  // Reset all views to hidden
+  els.queuesViewport.classList.add("hidden");
+  els.vehiclesCrudSection.classList.add("hidden");
+  els.cooperadosCrudSection.classList.add("hidden");
+  if (controlBar) controlBar.classList.add("hidden");
+  
+  // Reset active navigation styles
+  els.navBtnQueues.classList.remove("active");
+  els.navBtnVehicles.classList.remove("active");
+  els.navBtnCooperados.classList.remove("active");
+  
   if (view === "vehicles") {
-    // Switch to vehicles
-    els.queuesViewport.classList.add("hidden");
-    if (controlBar) controlBar.classList.add("hidden");
     els.vehiclesCrudSection.classList.remove("hidden");
-    
-    els.navBtnQueues.classList.remove("active");
     els.navBtnVehicles.classList.add("active");
     
-    // Stop queues auto-refresh
     stopAutoRefresh();
     els.refreshCountdownText.textContent = "Atualização pausada";
     els.refreshIndicatorDot.className = "indicator-dot inactive";
     
-    // Fetch and render vehicles
     loadVehiclesData();
+  } else if (view === "cooperados") {
+    els.cooperadosCrudSection.classList.remove("hidden");
+    els.navBtnCooperados.classList.add("active");
+    
+    stopAutoRefresh();
+    els.refreshCountdownText.textContent = "Atualização pausada";
+    els.refreshIndicatorDot.className = "indicator-dot inactive";
+    
+    loadCooperadosData();
   } else {
-    // Switch to queues
-    els.vehiclesCrudSection.classList.add("hidden");
+    // default/queues view
     els.queuesViewport.classList.remove("hidden");
     if (controlBar) controlBar.classList.remove("hidden");
-    
     els.navBtnQueues.classList.add("active");
-    els.navBtnVehicles.classList.remove("active");
     
-    // Restart queues auto-refresh
     if (appState.autoRefresh.active) {
       startAutoRefresh();
     }
-    
-    // Load queues data
     loadQueuesData(true);
   }
 }
 
 async function loadAdminAuxiliaryData() {
   try {
-    // Fetch Cooperados
+    // Fetch Cooperados (selecting status and idContatos)
     const { data: cooperadosData, error: coopError } = await supabaseClient
       .from("cooperado")
-      .select("id, nome")
+      .select("id, nome, status, idContatos")
       .order("nome");
       
     if (coopError) throw coopError;
@@ -991,13 +1046,15 @@ async function loadAdminAuxiliaryData() {
 }
 
 function populateModalDropdowns() {
-  // Cooperado select dropdown
+  // Cooperado select dropdown (filtering active ones)
   els.vehicleCooperado.innerHTML = '<option value="">Selecione um Cooperado...</option>';
   appState.cooperados.forEach(coop => {
-    const opt = document.createElement("option");
-    opt.value = coop.id;
-    opt.textContent = coop.nome;
-    els.vehicleCooperado.appendChild(opt);
+    if (coop.status !== 'inativo') {
+      const opt = document.createElement("option");
+      opt.value = coop.id;
+      opt.textContent = coop.nome;
+      els.vehicleCooperado.appendChild(opt);
+    }
   });
 
   // Vehicle types dropdown
@@ -1270,4 +1327,303 @@ async function deleteVehicle(id) {
     Toast.show("Erro ao excluir", err.message || "Tente novamente mais tarde.", "error");
   }
 }
+
+// ==========================================
+// COOPERADOS CRUD SYSTEM FUNCTIONS
+// ==========================================
+
+async function loadCooperadosData() {
+  els.crudCooperadosTbody.innerHTML = `
+    <tr>
+      <td colspan="3" style="text-align: center; padding: 2rem;">
+        <div class="spinner" style="margin: 0 auto 10px auto; border-top-color: var(--accent);"></div>
+        Carregando cooperados...
+      </td>
+    </tr>
+  `;
+  
+  try {
+    const { data, error } = await supabaseClient
+      .from("cooperado")
+      .select("*")
+      .order("nome");
+      
+    if (error) throw error;
+    
+    // Filter out inactive cooperados (soft deleted)
+    appState.cooperados = (data || []).filter(c => c.status !== 'inativo');
+    renderCooperadosTable();
+  } catch (err) {
+    console.error("Erro ao carregar cooperados:", err);
+    Toast.show("Erro ao carregar cooperados", err.message || "Tente novamente mais tarde.", "error");
+    els.crudCooperadosTbody.innerHTML = `
+      <tr>
+        <td colspan="3" style="text-align: center; padding: 2rem; color: var(--danger);">
+          Erro ao obter lista de cooperados.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function renderCooperadosTable() {
+  els.crudCooperadosTbody.innerHTML = "";
+  
+  const search = appState.cooperadosSearch.toLowerCase();
+  
+  const filtered = appState.cooperados.filter(c => {
+    const nameMatch = c.nome && c.nome.toLowerCase().includes(search);
+    
+    // Check if search term matches any contact ID
+    let contactsMatch = false;
+    if (c.idContatos && Array.isArray(c.idContatos)) {
+      contactsMatch = c.idContatos.some(contact => contact && contact.toLowerCase().includes(search));
+    }
+    
+    return !search || nameMatch || contactsMatch;
+  });
+  
+  if (filtered.length === 0) {
+    els.crudCooperadosTbody.innerHTML = `
+      <tr>
+        <td colspan="3" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          Nenhum cooperado cadastrado ou correspondente à busca.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  filtered.forEach(c => {
+    const row = document.createElement("tr");
+    
+    // Nome
+    const tdNome = document.createElement("td");
+    tdNome.textContent = c.nome || "Sem Nome";
+    tdNome.style.fontWeight = "600";
+    row.appendChild(tdNome);
+    
+    // Contatos (idContatos)
+    const tdContatos = document.createElement("td");
+    const tagsWrapper = document.createElement("div");
+    tagsWrapper.className = "contact-tags-list";
+    
+    const contacts = c.idContatos || [];
+    if (contacts.length === 0) {
+      tagsWrapper.innerHTML = '<span style="color:var(--text-muted); opacity:0.4;">Nenhum contato</span>';
+    } else {
+      contacts.forEach(contact => {
+        const span = document.createElement("span");
+        span.className = "contact-tag";
+        span.innerHTML = `<i data-lucide="hash" style="width:10px;height:10px;"></i> ${contact}`;
+        tagsWrapper.appendChild(span);
+      });
+    }
+    tdContatos.appendChild(tagsWrapper);
+    row.appendChild(tdContatos);
+    
+    // Ações
+    const tdActions = document.createElement("td");
+    tdActions.style.textAlign = "center";
+    
+    const divActions = document.createElement("div");
+    divActions.className = "crud-action-buttons";
+    divActions.style.justifyContent = "center";
+    
+    const btnEdit = document.createElement("button");
+    btnEdit.className = "btn btn-sm btn-secondary";
+    btnEdit.innerHTML = `<i data-lucide="edit" style="width:12px;height:12px;"></i>`;
+    btnEdit.title = "Editar";
+    btnEdit.addEventListener("click", () => editCooperado(c.id));
+    
+    const btnDel = document.createElement("button");
+    btnDel.className = "btn btn-sm btn-danger";
+    btnDel.innerHTML = `<i data-lucide="trash-2" style="width:12px;height:12px;"></i>`;
+    btnDel.title = "Excluir";
+    btnDel.addEventListener("click", () => deleteCooperado(c.id));
+    
+    divActions.appendChild(btnEdit);
+    divActions.appendChild(btnDel);
+    tdActions.appendChild(divActions);
+    row.appendChild(tdActions);
+    
+    els.crudCooperadosTbody.appendChild(row);
+  });
+  
+  lucide.createIcons();
+}
+
+function openCooperadoModal(cooperado = null) {
+  els.cooperadoForm.reset();
+  els.cooperadoId.value = "";
+  appState.cooperadoFormContacts = [];
+  
+  if (cooperado) {
+    els.cooperadoModalTitle.textContent = "Editar Cooperado";
+    els.cooperadoId.value = cooperado.id;
+    els.cooperadoNome.value = cooperado.nome || "";
+    
+    if (cooperado.idContatos && Array.isArray(cooperado.idContatos)) {
+      appState.cooperadoFormContacts = [...cooperado.idContatos];
+    }
+  } else {
+    els.cooperadoModalTitle.textContent = "Novo Cooperado";
+  }
+  
+  renderFormContactTags();
+  els.cooperadoModalBackdrop.classList.add("show");
+}
+
+function closeCooperadoModal() {
+  els.cooperadoModalBackdrop.classList.remove("show");
+  els.cooperadoForm.reset();
+  els.cooperadoId.value = "";
+  appState.cooperadoFormContacts = [];
+}
+
+function addContactTag() {
+  const inputVal = els.cooperadoContactInput.value.trim();
+  if (!inputVal) return;
+  
+  // Clean special characters: allow only alphanumeric
+  const cleaned = inputVal.replace(/[^A-Za-z0-9]/g, "");
+  
+  if (!cleaned) {
+    Toast.show("Formato inválido", "Apenas caracteres alfanuméricos são permitidos para contatos.", "warning");
+    return;
+  }
+  
+  // Check duplicate
+  if (appState.cooperadoFormContacts.includes(cleaned)) {
+    Toast.show("Contato Duplicado", "Este ID de contato já foi adicionado.", "warning");
+    return;
+  }
+  
+  appState.cooperadoFormContacts.push(cleaned);
+  renderFormContactTags();
+  
+  els.cooperadoContactInput.value = "";
+  els.cooperadoContactInput.focus();
+}
+
+function renderFormContactTags() {
+  els.cooperadoContactsTagsContainer.innerHTML = "";
+  
+  if (appState.cooperadoFormContacts.length === 0) {
+    els.cooperadoContactsTagsContainer.innerHTML = '<span style="color:var(--text-muted);font-size:0.75rem;opacity:0.6;padding:4px;">Nenhum contato adicionado ainda.</span>';
+    return;
+  }
+  
+  appState.cooperadoFormContacts.forEach(tag => {
+    const span = document.createElement("span");
+    span.className = "tag-badge";
+    span.innerHTML = `
+      <span>${tag}</span>
+      <button type="button" class="btn-remove-tag" data-tag="${tag}">
+        <i data-lucide="x" style="width:10px;height:10px;"></i>
+      </button>
+    `;
+    
+    // Remove button listener
+    span.querySelector(".btn-remove-tag").addEventListener("click", () => {
+      appState.cooperadoFormContacts = appState.cooperadoFormContacts.filter(t => t !== tag);
+      renderFormContactTags();
+    });
+    
+    els.cooperadoContactsTagsContainer.appendChild(span);
+  });
+  
+  lucide.createIcons();
+}
+
+async function handleCooperadoFormSubmit(e) {
+  e.preventDefault();
+  
+  const id = els.cooperadoId.value;
+  const nome = els.cooperadoNome.value.trim();
+  const idContatos = appState.cooperadoFormContacts;
+  
+  if (!nome) {
+    Toast.show("Campos Vazios", "O nome do cooperado é obrigatório.", "warning");
+    return;
+  }
+  
+  const saveBtn = document.getElementById("btn-save-cooperado");
+  const originalHtml = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = `<div class="spinner"></div><span>Salvando...</span>`;
+  
+  const payload = {
+    nome,
+    idContatos,
+    status: 'ativo'
+  };
+  
+  try {
+    if (id) {
+      // Update
+      const { error } = await supabaseClient
+        .from("cooperado")
+        .update(payload)
+        .eq("id", id);
+      if (error) throw error;
+    } else {
+      // Insert
+      const { error } = await supabaseClient
+        .from("cooperado")
+        .insert([payload]);
+      if (error) throw error;
+    }
+    
+    Toast.show(
+      id ? "Cooperado Atualizado" : "Cooperado Cadastrado",
+      `O cooperado ${nome} foi salvo com sucesso.`,
+      "success"
+    );
+    
+    closeCooperadoModal();
+    loadCooperadosData();
+    // Refresh vehicle dropdown values in memory
+    loadAdminAuxiliaryData();
+  } catch (err) {
+    console.error("Erro ao salvar cooperado:", err);
+    Toast.show("Erro ao salvar", err.message || "Verifique as informações digitadas.", "error");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalHtml;
+  }
+}
+
+function editCooperado(id) {
+  const cooperado = appState.cooperados.find(c => c.id === id);
+  if (cooperado) {
+    openCooperadoModal(cooperado);
+  }
+}
+
+async function deleteCooperado(id) {
+  const cooperado = appState.cooperados.find(c => c.id === id);
+  if (!cooperado) return;
+  
+  const confirmDelete = confirm(`Deseja realmente inativar o cooperado ${cooperado.nome}?`);
+  if (!confirmDelete) return;
+  
+  try {
+    const { error } = await supabaseClient
+      .from("cooperado")
+      .update({ status: 'inativo' })
+      .eq("id", id);
+      
+    if (error) throw error;
+    
+    Toast.show("Cooperado Inativado", `O cooperado ${cooperado.nome} foi inativado com sucesso.`, "success");
+    loadCooperadosData();
+    // Refresh vehicle dropdown values in memory
+    loadAdminAuxiliaryData();
+  } catch (err) {
+    console.error("Erro ao inativar cooperado:", err);
+    Toast.show("Erro ao inativar", err.message || "Tente novamente mais tarde.", "error");
+  }
+}
+
 
