@@ -70,6 +70,21 @@
       </div>
       
       <div class="sidebar-content">
+        <!-- Navigation Menu (Only shown to Admins) -->
+        <div id="sidebar-admin-nav" class="hidden">
+          <div class="sidebar-section-title">Navegação</div>
+          <div class="nav-group" style="margin-bottom: 1.5rem;">
+            <button class="nav-item active" id="nav-btn-queues">
+              <i data-lucide="layout-grid"></i>
+              <span>Filas de Carregamento</span>
+            </button>
+            <button class="nav-item" id="nav-btn-vehicles">
+              <i data-lucide="truck"></i>
+              <span>Gestão de Veículos</span>
+            </button>
+          </div>
+        </div>
+
         <!-- System Stats -->
         <div>
           <div class="sidebar-section-title">Estatísticas Gerais</div>
@@ -198,6 +213,46 @@
       <section class="queues-viewport" id="queues-viewport">
         <!-- Rendered dynamically by app.js -->
       </section>
+
+      <!-- CRUD Vehicles Viewport (Initially Hidden) -->
+      <section class="crud-container hidden" id="vehicles-crud-section">
+        <div class="crud-header">
+          <div class="crud-title-area">
+            <h2 class="crud-title">Cadastro de Veículos</h2>
+            <span class="crud-subtitle">Gerenciamento de veículos da central de fretes</span>
+          </div>
+          <button class="btn btn-sm" id="btn-new-vehicle" style="width: auto;">
+            <i data-lucide="plus"></i>
+            <span>Novo Veículo</span>
+          </button>
+        </div>
+
+        <div class="crud-toolbar">
+          <div class="crud-search-wrapper">
+            <i data-lucide="search" class="filter-icon"></i>
+            <input type="text" id="crud-search-input" class="filter-input" placeholder="Buscar placa ou cooperado...">
+          </div>
+        </div>
+
+        <div class="crud-table-wrapper">
+          <table class="crud-table">
+            <thead>
+              <tr>
+                <th>Placa Principal</th>
+                <th>Reboque 1</th>
+                <th>Reboque 2</th>
+                <th>Cooperado</th>
+                <th>Tipo</th>
+                <th>Vínculo</th>
+                <th style="width: 150px; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="crud-vehicles-tbody">
+              <!-- Rendered dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
       
     </main>
   </section>
@@ -213,6 +268,69 @@
       </div>
       <div class="modal-body" id="modal-body">
         <!-- Timeline items will be rendered dynamically by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- VEHICLE FORM MODAL -->
+  <div class="modal-backdrop" id="vehicle-modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="vehicle-modal-title">Novo Veículo</h3>
+        <button class="modal-close" id="vehicle-modal-close">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="vehicle-form">
+          <input type="hidden" id="vehicle-id">
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="vehicle-placa">Placa Principal *</label>
+              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa" placeholder="ABC1234" required pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$" title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="vehicle-placa2">Placa Reboque 1</label>
+              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa2" placeholder="ABC1234" pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$" title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="vehicle-placa3">Placa Reboque 2</label>
+              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa3" placeholder="ABC1234" pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$" title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
+            </div>
+          </div>
+          
+          <div class="form-group" style="margin-top: 1rem;">
+            <label class="form-label" for="vehicle-cooperado">Cooperado *</label>
+            <select class="form-input" id="vehicle-cooperado" required>
+              <option value="">Carregando cooperados...</option>
+            </select>
+          </div>
+          
+          <div class="form-row" style="margin-top: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="vehicle-tipo">Tipo de Veículo *</label>
+              <select class="form-input" id="vehicle-tipo" required>
+                <option value="">Carregando tipos...</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="vehicle-frota">Vínculo *</label>
+              <select class="form-input" id="vehicle-frota" required>
+                <option value="true">Frota</option>
+                <option value="false">Terceiro</option>
+              </select>
+            </div>
+          </div>
+          
+          <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-vehicle" style="width: auto;">Cancelar</button>
+            <button type="submit" class="btn btn-sm" id="btn-save-vehicle" style="width: auto;">Salvar</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

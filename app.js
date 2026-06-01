@@ -11,6 +11,8 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 // Application State
 let appState = {
   user: null,
+  isAdmin: false,
+  currentView: "queues", // "queues" or "vehicles"
   queues: [], // Raw view data
   filteredQueues: {}, // Grouped and filtered view data
   vehicleTypes: [], // List of unique vehicle types for filtering
@@ -26,7 +28,12 @@ let appState = {
     intervalId: null,
     countdown: 30,
     maxSeconds: 30
-  }
+  },
+  // CRUD state
+  vehicles: [],
+  cooperados: [],
+  veiculosTiposActive: [],
+  vehiclesSearch: ""
 };
 
 // UI Elements
@@ -68,7 +75,28 @@ const els = {
   modalBackdrop: document.getElementById("modal-backdrop"),
   modalTitle: document.getElementById("modal-title"),
   modalBody: document.getElementById("modal-body"),
-  modalCloseBtn: document.getElementById("modal-close")
+  modalCloseBtn: document.getElementById("modal-close"),
+
+  // Admin and CRUD elements
+  sidebarAdminNav: document.getElementById("sidebar-admin-nav"),
+  navBtnQueues: document.getElementById("nav-btn-queues"),
+  navBtnVehicles: document.getElementById("nav-btn-vehicles"),
+  vehiclesCrudSection: document.getElementById("vehicles-crud-section"),
+  btnNewVehicle: document.getElementById("btn-new-vehicle"),
+  crudSearchInput: document.getElementById("crud-search-input"),
+  crudVehiclesTbody: document.getElementById("crud-vehicles-tbody"),
+  vehicleModalBackdrop: document.getElementById("vehicle-modal-backdrop"),
+  vehicleModalTitle: document.getElementById("vehicle-modal-title"),
+  vehicleModalClose: document.getElementById("vehicle-modal-close"),
+  vehicleForm: document.getElementById("vehicle-form"),
+  vehicleId: document.getElementById("vehicle-id"),
+  vehiclePlaca: document.getElementById("vehicle-placa"),
+  vehiclePlaca2: document.getElementById("vehicle-placa2"),
+  vehiclePlaca3: document.getElementById("vehicle-placa3"),
+  vehicleCooperado: document.getElementById("vehicle-cooperado"),
+  vehicleTipo: document.getElementById("vehicle-tipo"),
+  vehicleFrota: document.getElementById("vehicle-frota"),
+  btnCancelVehicle: document.getElementById("btn-cancel-vehicle")
 };
 
 // TOAST SYSTEM
@@ -198,7 +226,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // AUTHENTICATION FUNCTIONS
-function handleSignIn(user) {
+async function handleSignIn(user) {
   appState.user = user;
   els.userEmailDisplay.textContent = user.email;
   els.userAvatarDisplay.textContent = user.email.substring(0, 2).toUpperCase();
@@ -213,6 +241,35 @@ function handleSignIn(user) {
     els.sidebar.classList.add("collapsed");
   }
   
+  // Check user role from profiles table
+  try {
+    const { data: profile, error } = await supabaseClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+      
+    if (error) throw error;
+    
+    if (profile && profile.role === 'admin') {
+      appState.isAdmin = true;
+      document.querySelector(".user-role").textContent = "Administrador";
+      els.sidebarAdminNav.classList.remove("hidden");
+      loadAdminAuxiliaryData();
+    } else {
+      appState.isAdmin = false;
+      document.querySelector(".user-role").textContent = "Operador";
+      els.sidebarAdminNav.classList.add("hidden");
+      switchView("queues");
+    }
+  } catch (err) {
+    console.error("Erro ao verificar papel do usuario:", err);
+    appState.isAdmin = false;
+    document.querySelector(".user-role").textContent = "Operador";
+    els.sidebarAdminNav.classList.add("hidden");
+    switchView("queues");
+  }
+  
   // Load data
   loadQueuesData(true);
   startAutoRefresh();
@@ -220,12 +277,27 @@ function handleSignIn(user) {
 
 function handleSignOut() {
   appState.user = null;
+  appState.isAdmin = false;
+  appState.currentView = "queues";
+  appState.vehicles = [];
+  appState.cooperados = [];
+  appState.veiculosTiposActive = [];
+  
   stopAutoRefresh();
   els.authSection.classList.remove("hidden");
   els.dashboardSection.classList.add("hidden");
   
+  // Reset navigation states
+  els.navBtnQueues.classList.add("active");
+  els.navBtnVehicles.classList.remove("active");
+  els.vehiclesCrudSection.classList.add("hidden");
+  els.queuesViewport.classList.remove("hidden");
+  const controlBar = document.querySelector(".control-bar");
+  if (controlBar) controlBar.classList.remove("hidden");
+  
   // Clear sensitive UI elements
   els.queuesViewport.innerHTML = "";
+  els.crudVehiclesTbody.innerHTML = "";
   els.loginEmail.value = "";
   els.loginPass.value = "";
 }
@@ -350,9 +422,33 @@ function setupEventListeners() {
     if (e.target === els.modalBackdrop) closeModal();
   });
   
+  // Admin Navigation event listeners
+  els.navBtnQueues.addEventListener("click", () => switchView("queues"));
+  els.navBtnVehicles.addEventListener("click", () => switchView("vehicles"));
+
+  // Vehicle Modal Open/Close
+  els.btnNewVehicle.addEventListener("click", () => openVehicleModal());
+  els.vehicleModalClose.addEventListener("click", closeVehicleModal);
+  els.btnCancelVehicle.addEventListener("click", closeVehicleModal);
+  els.vehicleModalBackdrop.addEventListener("click", (e) => {
+    if (e.target === els.vehicleModalBackdrop) closeVehicleModal();
+  });
+
+  // Vehicle Form Submit
+  els.vehicleForm.addEventListener("submit", handleVehicleFormSubmit);
+
+  // Vehicle Search Input
+  els.crudSearchInput.addEventListener("input", (e) => {
+    appState.vehiclesSearch = e.target.value.toLowerCase().trim();
+    renderVehiclesTable();
+  });
+
   // ESC key to close modal
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModal();
+    if (e.key === "Escape") {
+      closeModal();
+      closeVehicleModal();
+    }
   });
 }
 
@@ -818,3 +914,360 @@ function updateAutoRefreshUI() {
   }
   lucide.createIcons();
 }
+
+// ==========================================
+// ADMINISTRATIVE & CRUD SYSTEM FUNCTIONS
+// ==========================================
+
+function switchView(view) {
+  if (view === "vehicles" && !appState.isAdmin) {
+    Toast.show("Acesso Negado", "Apenas administradores podem acessar a gestão de veículos.", "error");
+    return;
+  }
+  
+  appState.currentView = view;
+  const controlBar = document.querySelector(".control-bar");
+  
+  if (view === "vehicles") {
+    // Switch to vehicles
+    els.queuesViewport.classList.add("hidden");
+    if (controlBar) controlBar.classList.add("hidden");
+    els.vehiclesCrudSection.classList.remove("hidden");
+    
+    els.navBtnQueues.classList.remove("active");
+    els.navBtnVehicles.classList.add("active");
+    
+    // Stop queues auto-refresh
+    stopAutoRefresh();
+    els.refreshCountdownText.textContent = "Atualização pausada";
+    els.refreshIndicatorDot.className = "indicator-dot inactive";
+    
+    // Fetch and render vehicles
+    loadVehiclesData();
+  } else {
+    // Switch to queues
+    els.vehiclesCrudSection.classList.add("hidden");
+    els.queuesViewport.classList.remove("hidden");
+    if (controlBar) controlBar.classList.remove("hidden");
+    
+    els.navBtnQueues.classList.add("active");
+    els.navBtnVehicles.classList.remove("active");
+    
+    // Restart queues auto-refresh
+    if (appState.autoRefresh.active) {
+      startAutoRefresh();
+    }
+    
+    // Load queues data
+    loadQueuesData(true);
+  }
+}
+
+async function loadAdminAuxiliaryData() {
+  try {
+    // Fetch Cooperados
+    const { data: cooperadosData, error: coopError } = await supabaseClient
+      .from("cooperado")
+      .select("id, nome")
+      .order("nome");
+      
+    if (coopError) throw coopError;
+    appState.cooperados = cooperadosData || [];
+    
+    // Fetch active Vehicle Types
+    const { data: typesData, error: typesError } = await supabaseClient
+      .from("veiculosTipos")
+      .select("nome")
+      .eq("status", "ativo")
+      .order("nome");
+      
+    if (typesError) throw typesError;
+    appState.veiculosTiposActive = typesData || [];
+    
+    populateModalDropdowns();
+  } catch (err) {
+    console.error("Erro ao carregar dados auxiliares do admin:", err);
+  }
+}
+
+function populateModalDropdowns() {
+  // Cooperado select dropdown
+  els.vehicleCooperado.innerHTML = '<option value="">Selecione um Cooperado...</option>';
+  appState.cooperados.forEach(coop => {
+    const opt = document.createElement("option");
+    opt.value = coop.id;
+    opt.textContent = coop.nome;
+    els.vehicleCooperado.appendChild(opt);
+  });
+
+  // Vehicle types dropdown
+  els.vehicleTipo.innerHTML = '<option value="">Selecione um Tipo...</option>';
+  appState.veiculosTiposActive.forEach(type => {
+    const opt = document.createElement("option");
+    opt.value = type.nome;
+    opt.textContent = type.nome;
+    els.vehicleTipo.appendChild(opt);
+  });
+}
+
+function getCooperadoName(cooperadoId) {
+  if (!cooperadoId) return "Não associado";
+  const coop = appState.cooperados.find(c => c.id === cooperadoId);
+  return coop ? coop.nome : "Carregando...";
+}
+
+async function loadVehiclesData() {
+  els.crudVehiclesTbody.innerHTML = `
+    <tr>
+      <td colspan="7" style="text-align: center; padding: 2rem;">
+        <div class="spinner" style="margin: 0 auto 10px auto; border-top-color: var(--accent);"></div>
+        Carregando veículos...
+      </td>
+    </tr>
+  `;
+  
+  try {
+    const { data, error } = await supabaseClient
+      .from("veiculos")
+      .select("*")
+      .order("created_at", { ascending: false });
+      
+    if (error) throw error;
+    
+    // Filter out inactive vehicles (soft deleted)
+    appState.vehicles = (data || []).filter(v => v.status !== 'inativo');
+    renderVehiclesTable();
+  } catch (err) {
+    console.error("Erro ao carregar veículos:", err);
+    Toast.show("Erro ao carregar veículos", err.message || "Tente novamente mais tarde.", "error");
+    els.crudVehiclesTbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--danger);">
+          Erro ao obter lista de veículos.
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function renderVehiclesTable() {
+  els.crudVehiclesTbody.innerHTML = "";
+  
+  const search = appState.vehiclesSearch.toLowerCase();
+  
+  const filtered = appState.vehicles.filter(v => {
+    const coopName = getCooperadoName(v.cooperado).toLowerCase();
+    const plateMatch = (v.placa && v.placa.toLowerCase().includes(search)) ||
+                       (v.placa2 && v.placa2.toLowerCase().includes(search)) ||
+                       (v.placa3 && v.placa3.toLowerCase().includes(search));
+    const coopMatch = coopName.includes(search);
+    const tipoMatch = (v.tipo && v.tipo.toLowerCase().includes(search));
+    
+    return !search || plateMatch || coopMatch || tipoMatch;
+  });
+  
+  if (filtered.length === 0) {
+    els.crudVehiclesTbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          Nenhum veículo cadastrado ou correspondente à busca.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  filtered.forEach(v => {
+    const row = document.createElement("tr");
+    
+    // Placa Principal
+    const tdPlaca = document.createElement("td");
+    tdPlaca.innerHTML = renderPlateBadge(v.placa);
+    row.appendChild(tdPlaca);
+    
+    // Placa Reboque 1
+    const tdPlaca2 = document.createElement("td");
+    tdPlaca2.innerHTML = v.placa2 ? renderPlateBadge(v.placa2, true) : '<span style="color:var(--text-muted);opacity:0.4;">-</span>';
+    row.appendChild(tdPlaca2);
+    
+    // Placa Reboque 2
+    const tdPlaca3 = document.createElement("td");
+    tdPlaca3.innerHTML = v.placa3 ? renderPlateBadge(v.placa3, true) : '<span style="color:var(--text-muted);opacity:0.4;">-</span>';
+    row.appendChild(tdPlaca3);
+    
+    // Cooperado
+    const tdCoop = document.createElement("td");
+    tdCoop.textContent = getCooperadoName(v.cooperado);
+    row.appendChild(tdCoop);
+    
+    // Tipo
+    const tdTipo = document.createElement("td");
+    tdTipo.textContent = v.tipo || "N/D";
+    row.appendChild(tdTipo);
+    
+    // Vínculo
+    const tdVinculo = document.createElement("td");
+    if (v.frota) {
+      tdVinculo.innerHTML = `<span class="frota-badge frota"><i data-lucide="shield-check" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Frota</span>`;
+    } else {
+      tdVinculo.innerHTML = `<span class="frota-badge terceiro"><i data-lucide="user" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Terceiro</span>`;
+    }
+    row.appendChild(tdVinculo);
+    
+    // Ações
+    const tdActions = document.createElement("td");
+    tdActions.style.textAlign = "center";
+    
+    const divActions = document.createElement("div");
+    divActions.className = "crud-action-buttons";
+    divActions.style.justifyContent = "center";
+    
+    const btnEdit = document.createElement("button");
+    btnEdit.className = "btn btn-sm btn-secondary";
+    btnEdit.innerHTML = `<i data-lucide="edit" style="width:12px;height:12px;"></i>`;
+    btnEdit.title = "Editar";
+    btnEdit.addEventListener("click", () => editVehicle(v.id));
+    
+    const btnDel = document.createElement("button");
+    btnDel.className = "btn btn-sm btn-danger";
+    btnDel.innerHTML = `<i data-lucide="trash-2" style="width:12px;height:12px;"></i>`;
+    btnDel.title = "Excluir";
+    btnDel.addEventListener("click", () => deleteVehicle(v.id));
+    
+    divActions.appendChild(btnEdit);
+    divActions.appendChild(btnDel);
+    tdActions.appendChild(divActions);
+    row.appendChild(tdActions);
+    
+    els.crudVehiclesTbody.appendChild(row);
+  });
+  
+  lucide.createIcons();
+}
+
+function openVehicleModal(vehicle = null) {
+  // Ensure aux data is loaded
+  if (appState.cooperados.length === 0 || appState.veiculosTiposActive.length === 0) {
+    loadAdminAuxiliaryData();
+  } else {
+    populateModalDropdowns();
+  }
+  
+  els.vehicleForm.reset();
+  els.vehicleId.value = "";
+  
+  if (vehicle) {
+    els.vehicleModalTitle.textContent = "Editar Veículo";
+    els.vehicleId.value = vehicle.id;
+    els.vehiclePlaca.value = vehicle.placa || "";
+    els.vehiclePlaca2.value = vehicle.placa2 || "";
+    els.vehiclePlaca3.value = vehicle.placa3 || "";
+    
+    // Select correct values after a brief timeout to let options render if needed
+    setTimeout(() => {
+      els.vehicleCooperado.value = vehicle.cooperado || "";
+      els.vehicleTipo.value = vehicle.tipo || "";
+      els.vehicleFrota.value = String(vehicle.frota);
+    }, 50);
+  } else {
+    els.vehicleModalTitle.textContent = "Novo Veículo";
+  }
+  
+  els.vehicleModalBackdrop.classList.add("show");
+}
+
+function closeVehicleModal() {
+  els.vehicleModalBackdrop.classList.remove("show");
+  els.vehicleForm.reset();
+  els.vehicleId.value = "";
+}
+
+async function handleVehicleFormSubmit(e) {
+  e.preventDefault();
+  
+  const id = els.vehicleId.value;
+  const placa = els.vehiclePlaca.value.trim().toUpperCase();
+  const placa2 = els.vehiclePlaca2.value.trim().toUpperCase() || null;
+  const placa3 = els.vehiclePlaca3.value.trim().toUpperCase() || null;
+  const cooperado = els.vehicleCooperado.value;
+  const tipo = els.vehicleTipo.value;
+  const frota = els.vehicleFrota.value === "true";
+  
+  const saveBtn = document.getElementById("btn-save-vehicle");
+  const originalHtml = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = `<div class="spinner"></div><span>Salvando...</span>`;
+  
+  const payload = {
+    placa,
+    placa2,
+    placa3,
+    cooperado,
+    tipo,
+    frota,
+    status: 'ativo'
+  };
+  
+  try {
+    if (id) {
+      // Update
+      const { error } = await supabaseClient
+        .from("veiculos")
+        .update(payload)
+        .eq("id", id);
+      if (error) throw error;
+    } else {
+      // Insert
+      const { error } = await supabaseClient
+        .from("veiculos")
+        .insert([payload]);
+      if (error) throw error;
+    }
+    
+    Toast.show(
+      id ? "Veículo Atualizado" : "Veículo Cadastrado",
+      `O veículo placa ${placa} foi salvo com sucesso.`,
+      "success"
+    );
+    
+    closeVehicleModal();
+    loadVehiclesData();
+  } catch (err) {
+    console.error("Erro ao salvar veículo:", err);
+    Toast.show("Erro ao salvar", err.message || "Verifique se as informações estão corretas.", "error");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalHtml;
+  }
+}
+
+function editVehicle(id) {
+  const vehicle = appState.vehicles.find(v => v.id === id);
+  if (vehicle) {
+    openVehicleModal(vehicle);
+  }
+}
+
+async function deleteVehicle(id) {
+  const vehicle = appState.vehicles.find(v => v.id === id);
+  if (!vehicle) return;
+  
+  const confirmDelete = confirm(`Deseja realmente excluir o veículo com placa ${vehicle.placa}?`);
+  if (!confirmDelete) return;
+  
+  try {
+    const { error } = await supabaseClient
+      .from("veiculos")
+      .update({ status: 'inativo' })
+      .eq("id", id);
+      
+    if (error) throw error;
+    
+    Toast.show("Veículo Removido", `O veículo com placa ${vehicle.placa} foi removido com sucesso.`, "success");
+    loadVehiclesData();
+  } catch (err) {
+    console.error("Erro ao deletar veículo:", err);
+    Toast.show("Erro ao excluir", err.message || "Tente novamente mais tarde.", "error");
+  }
+}
+
