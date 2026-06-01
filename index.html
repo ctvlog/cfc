@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central de Fretes Cootravale</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- AUTHENTICATION SECTION (Login Screen) -->
+  <section id="auth-section" class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">
+          <i data-lucide="truck"></i>
+        </div>
+        <h1 class="auth-title">Cootravale</h1>
+        <p class="auth-subtitle">Central de Fretes - Gestão de Filas</p>
+      </div>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="login-email">E-mail</label>
+          <div class="input-with-icon">
+            <i data-lucide="mail" class="input-icon"></i>
+            <input class="form-input" type="email" id="login-email" placeholder="nome@cootravale.com.br" required autocomplete="username">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="login-password">Senha</label>
+          <div class="input-with-icon">
+            <i data-lucide="lock" class="input-icon"></i>
+            <input class="form-input" type="password" id="login-password" placeholder="Digite sua senha" required autocomplete="current-password">
+          </div>
+        </div>
+        
+        <button type="submit" id="login-btn" class="btn">
+          <span>Entrar</span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- DASHBOARD SECTION -->
+  <section id="dashboard-section" class="app-layout hidden">
+    
+    <!-- Collapsible Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <div class="logo-details">
+          <div class="logo-text">Cootravale</div>
+          <div class="logo-sub">Central de Fretes</div>
+        </div>
+      </div>
+      
+      <div class="sidebar-content">
+        <!-- System Stats -->
+        <div>
+          <div class="sidebar-section-title">Estatísticas Gerais</div>
+          <div class="stats-grid">
+            <div class="stat-item" title="Filas ativas monitoradas">
+              <div class="stat-icon green">
+                <i data-lucide="git-merge" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-val" id="stat-total-queues">0</span>
+                <span class="stat-lbl">Filas Ativas</span>
+              </div>
+            </div>
+            
+            <div class="stat-item" title="Total de veículos registrados nas filas">
+              <div class="stat-icon green">
+                <i data-lucide="truck" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-val" id="stat-total-vehicles">0</span>
+                <span class="stat-lbl">Veículos</span>
+              </div>
+            </div>
+            
+            <div class="stat-item" title="Veículos de frota própria">
+              <div class="stat-icon blue">
+                <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-val" id="stat-total-frota">0</span>
+                <span class="stat-lbl">Frota Própria</span>
+              </div>
+            </div>
+            
+            <div class="stat-item" title="Histórico total de recusas registradas">
+              <div class="stat-icon orange">
+                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-val" id="stat-total-recusas">0</span>
+                <span class="stat-lbl">Recusas</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sidebar Footer User Profile -->
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="user-avatar">AD</div>
+          <div class="user-details">
+            <div class="user-name" id="user-email">admin@cootravale.com</div>
+            <div class="user-role">Operador</div>
+          </div>
+        </div>
+        <button class="btn btn-logout" id="logout-btn">
+          <i data-lucide="log-out" style="width:16px; height:16px;"></i>
+          <span>Encerrar Sessão</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <main class="main-content">
+      
+      <!-- Top Application Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <button class="btn-icon" id="toggle-sidebar-btn" title="Recolher / Expandir Menu">
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="header-title-container">
+            <h2 class="header-title">Filas de Carregamento</h2>
+            <span class="header-subtitle">Painel Regional de Monitoramento de Placas</span>
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <!-- Refresh indicator & Controls -->
+          <div class="refresh-indicator">
+            <div class="indicator-dot active" id="refresh-indicator-dot"></div>
+            <span id="refresh-countdown-text">Atualizando em 30s</span>
+          </div>
+          
+          <button class="btn-icon" id="btn-toggle-auto-refresh" title="Pausar / Iniciar Atualização Automática">
+            <i data-lucide="pause"></i>
+          </button>
+          
+          <button class="btn-icon" id="btn-refresh" title="Recarregar Dados Agora">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+          
+          <!-- Theme Toggle -->
+          <button class="btn-icon" id="theme-toggle-btn" title="Alternar Modo Escuro / Claro">
+            <i data-lucide="sun"></i>
+          </button>
+        </div>
+      </header>
+      
+      <!-- Control Bar (Filters) -->
+      <section class="control-bar">
+        <div class="filter-group">
+          <div class="filter-input-wrapper">
+            <i data-lucide="search" class="filter-icon"></i>
+            <input type="text" id="search-input" class="filter-input" placeholder="Buscar placa, regional ou cooperado...">
+          </div>
+        </div>
+        
+        <div class="filter-group" style="flex: 0 1 auto;">
+          <select id="vehicle-type-filter" class="filter-select">
+            <option value="">Todos os tipos</option>
+          </select>
+        </div>
+        
+        <div class="filter-group" style="flex: 0 1 auto;">
+          <select id="frota-filter" class="filter-select">
+            <option value="all">Vínculo: Todos</option>
+            <option value="frota">Apenas Frota</option>
+            <option value="terceiro">Apenas Terceiros</option>
+          </select>
+        </div>
+      </section>
+      
+      <!-- Dynamic Queues Tables Grid Viewport -->
+      <section class="queues-viewport" id="queues-viewport">
+        <!-- Rendered dynamically by app.js -->
+      </section>
+      
+    </main>
+  </section>
+
+  <!-- REFUSALS HISTORY MODAL -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">Histórico de Recusas</h3>
+        <button class="modal-close" id="modal-close">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Timeline items will be rendered dynamically by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+</body>
+</html>
