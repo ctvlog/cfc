@@ -255,6 +255,19 @@
               <!-- Rendered dynamically by app.js -->
             </tbody>
           </table>
+          
+          <!-- Pagination controls for Vehicles -->
+          <div class="pagination-controls">
+            <span class="pagination-info" id="vehicles-pagination-info">Página 1</span>
+            <div class="pagination-buttons">
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-vehicles-page" disabled>
+                <i data-lucide="chevron-left"></i> Anterior
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-vehicles-page" disabled>
+                Próximo <i data-lucide="chevron-right"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -291,6 +304,19 @@
               <!-- Rendered dynamically by app.js -->
             </tbody>
           </table>
+          
+          <!-- Pagination controls for Cooperados -->
+          <div class="pagination-controls">
+            <span class="pagination-info" id="cooperados-pagination-info">Página 1</span>
+            <div class="pagination-buttons">
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-cooperados-page" disabled>
+                <i data-lucide="chevron-left"></i> Anterior
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-cooperados-page" disabled>
+                Próximo <i data-lucide="chevron-right"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </section>
       
@@ -343,10 +369,14 @@
           </div>
           
           <div class="form-group" style="margin-top: 1rem;">
-            <label class="form-label" for="vehicle-cooperado">Cooperado *</label>
-            <select class="form-input" id="vehicle-cooperado" required>
-              <option value="">Carregando cooperados...</option>
-            </select>
+            <label class="form-label" for="vehicle-cooperado-search">Cooperado *</label>
+            <div class="searchable-select-wrapper">
+              <input type="text" class="form-input" style="padding-left: 12px;" id="vehicle-cooperado-search" placeholder="Pesquisar cooperado pelo nome..." required autocomplete="off">
+              <input type="hidden" id="vehicle-cooperado" required>
+              <div class="searchable-select-dropdown" id="vehicle-cooperado-dropdown">
+                <!-- Dropdown items will be rendered here dynamically -->
+              </div>
+            </div>
           </div>
           
           <div class="form-row" style="margin-top: 1rem;">

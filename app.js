@@ -32,10 +32,15 @@ let appState = {
   // CRUD state
   vehicles: [],
   cooperados: [],
+  cooperadosCrudList: [],
   veiculosTiposActive: [],
   vehiclesSearch: "",
   cooperadosSearch: "",
-  cooperadoFormContacts: []
+  cooperadoFormContacts: [],
+  vehiclesPage: 0,
+  cooperadosPage: 0,
+  vehiclesHasMore: false,
+  cooperadosHasMore: false
 };
 
 // UI Elements
@@ -113,7 +118,19 @@ const els = {
   vehicleTipo: document.getElementById("vehicle-tipo"),
   vehicleFrota: document.getElementById("vehicle-frota"),
   btnCancelVehicle: document.getElementById("btn-cancel-vehicle"),
-  btnCancelCooperado: document.getElementById("btn-cancel-cooperado")
+  btnCancelCooperado: document.getElementById("btn-cancel-cooperado"),
+
+  // Pagination elements
+  vehiclesPaginationInfo: document.getElementById("vehicles-pagination-info"),
+  btnPrevVehiclesPage: document.getElementById("btn-prev-vehicles-page"),
+  btnNextVehiclesPage: document.getElementById("btn-next-vehicles-page"),
+  cooperadosPaginationInfo: document.getElementById("cooperados-pagination-info"),
+  btnPrevCooperadosPage: document.getElementById("btn-prev-cooperados-page"),
+  btnNextCooperadosPage: document.getElementById("btn-next-cooperados-page"),
+
+  // Searchable select elements
+  vehicleCooperadoSearch: document.getElementById("vehicle-cooperado-search"),
+  vehicleCooperadoDropdown: document.getElementById("vehicle-cooperado-dropdown")
 };
 
 // TOAST SYSTEM
@@ -216,6 +233,14 @@ function getRelativeTime(isoString) {
   const diffDays = Math.floor(diffHours / 24);
   const remainingHours = diffHours % 24;
   return `${diffDays}d ${remainingHours}h`;
+}
+
+function debounce(func, delay) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
 }
 
 // INITIALIZATION & STATE LISTENERS
@@ -458,11 +483,12 @@ function setupEventListeners() {
   // Vehicle Form Submit
   els.vehicleForm.addEventListener("submit", handleVehicleFormSubmit);
 
-  // Vehicle Search Input
-  els.crudSearchInput.addEventListener("input", (e) => {
-    appState.vehiclesSearch = e.target.value.toLowerCase().trim();
-    renderVehiclesTable();
-  });
+  // Vehicle Search Input (Database-level)
+  els.crudSearchInput.addEventListener("input", debounce((e) => {
+    appState.vehiclesSearch = e.target.value.trim();
+    appState.vehiclesPage = 0;
+    loadVehiclesData();
+  }, 300));
 
   // Cooperado Modal Open/Close
   els.btnNewCooperado.addEventListener("click", () => openCooperadoModal());
@@ -484,11 +510,25 @@ function setupEventListeners() {
   // Cooperado Form Submit
   els.cooperadoForm.addEventListener("submit", handleCooperadoFormSubmit);
 
-  // Cooperado Search Input
-  els.crudCooperadosSearchInput.addEventListener("input", (e) => {
-    appState.cooperadosSearch = e.target.value.toLowerCase().trim();
-    renderCooperadosTable();
-  });
+  // Cooperado Search Input (Database-level)
+  els.crudCooperadosSearchInput.addEventListener("input", debounce((e) => {
+    appState.cooperadosSearch = e.target.value.trim();
+    appState.cooperadosPage = 0;
+    loadCooperadosData();
+  }, 300));
+
+  // Vehicles Pagination Event Listeners
+  els.btnPrevVehiclesPage.addEventListener("click", () => navigateVehiclesPage(-1));
+  els.btnNextVehiclesPage.addEventListener("click", () => navigateVehiclesPage(1));
+
+  // Cooperados Pagination Event Listeners
+  els.btnPrevCooperadosPage.addEventListener("click", () => navigateCooperadosPage(-1));
+  els.btnNextCooperadosPage.addEventListener("click", () => navigateCooperadosPage(1));
+
+  // Searchable Select (Combobox) Event Listeners
+  els.vehicleCooperadoSearch.addEventListener("input", filterCooperadosDropdown);
+  els.vehicleCooperadoSearch.addEventListener("focus", showCooperadosDropdown);
+  document.addEventListener("click", handleSearchableSelectClickOutside);
 
   // ESC key to close modal
   document.addEventListener("keydown", (e) => {
@@ -1046,17 +1086,6 @@ async function loadAdminAuxiliaryData() {
 }
 
 function populateModalDropdowns() {
-  // Cooperado select dropdown (filtering active ones)
-  els.vehicleCooperado.innerHTML = '<option value="">Selecione um Cooperado...</option>';
-  appState.cooperados.forEach(coop => {
-    if (coop.status !== 'inativo') {
-      const opt = document.createElement("option");
-      opt.value = coop.id;
-      opt.textContent = coop.nome;
-      els.vehicleCooperado.appendChild(opt);
-    }
-  });
-
   // Vehicle types dropdown
   els.vehicleTipo.innerHTML = '<option value="">Selecione um Tipo...</option>';
   appState.veiculosTiposActive.forEach(type => {
@@ -1083,16 +1112,48 @@ async function loadVehiclesData() {
     </tr>
   `;
   
+  const page = appState.vehiclesPage;
+  const limit = 30;
+  const from = page * limit;
+  const to = from + limit - 1;
+  const search = appState.vehiclesSearch;
+  
   try {
-    const { data, error } = await supabaseClient
+    let cooperadoIds = [];
+    if (search) {
+      // Find matching cooperados to search by owner name (limit to 100 to avoid URI size limit in .or)
+      const { data: coops } = await supabaseClient
+        .from("cooperado")
+        .select("id")
+        .ilike("nome", `%${search}%`)
+        .limit(100);
+      if (coops) {
+        cooperadoIds = coops.map(c => c.id);
+      }
+    }
+    
+    let query = supabaseClient
       .from("veiculos")
       .select("*")
+      .or("status.is.null,status.neq.inativo")
       .order("created_at", { ascending: false });
       
+    if (search) {
+      if (cooperadoIds.length > 0) {
+        const idsList = cooperadoIds.map(id => `cooperado.eq.${id}`).join(",");
+        query = query.or(`placa.ilike.%${search}%,placa2.ilike.%${search}%,placa3.ilike.%${search}%,${idsList}`);
+      } else {
+        query = query.or(`placa.ilike.%${search}%,placa2.ilike.%${search}%,placa3.ilike.%${search}%`);
+      }
+    }
+    
+    const { data, error } = await query.range(from, to);
     if (error) throw error;
     
-    // Filter out inactive vehicles (soft deleted)
-    appState.vehicles = (data || []).filter(v => v.status !== 'inativo');
+    appState.vehicles = data || [];
+    appState.vehiclesHasMore = (data && data.length === limit);
+    
+    updateVehiclesPaginationUI();
     renderVehiclesTable();
   } catch (err) {
     console.error("Erro ao carregar veículos:", err);
@@ -1110,18 +1171,7 @@ async function loadVehiclesData() {
 function renderVehiclesTable() {
   els.crudVehiclesTbody.innerHTML = "";
   
-  const search = appState.vehiclesSearch.toLowerCase();
-  
-  const filtered = appState.vehicles.filter(v => {
-    const coopName = getCooperadoName(v.cooperado).toLowerCase();
-    const plateMatch = (v.placa && v.placa.toLowerCase().includes(search)) ||
-                       (v.placa2 && v.placa2.toLowerCase().includes(search)) ||
-                       (v.placa3 && v.placa3.toLowerCase().includes(search));
-    const coopMatch = coopName.includes(search);
-    const tipoMatch = (v.tipo && v.tipo.toLowerCase().includes(search));
-    
-    return !search || plateMatch || coopMatch || tipoMatch;
-  });
+  const filtered = appState.vehicles;
   
   if (filtered.length === 0) {
     els.crudVehiclesTbody.innerHTML = `
@@ -1202,16 +1252,20 @@ function renderVehiclesTable() {
   lucide.createIcons();
 }
 
-function openVehicleModal(vehicle = null) {
+async function openVehicleModal(vehicle = null) {
   // Ensure aux data is loaded
   if (appState.cooperados.length === 0 || appState.veiculosTiposActive.length === 0) {
-    loadAdminAuxiliaryData();
+    await loadAdminAuxiliaryData();
   } else {
     populateModalDropdowns();
   }
   
   els.vehicleForm.reset();
   els.vehicleId.value = "";
+  els.vehicleCooperadoSearch.value = "";
+  els.vehicleCooperado.value = "";
+  comboboxState.selectedId = "";
+  comboboxState.selectedName = "";
   
   if (vehicle) {
     els.vehicleModalTitle.textContent = "Editar Veículo";
@@ -1220,12 +1274,14 @@ function openVehicleModal(vehicle = null) {
     els.vehiclePlaca2.value = vehicle.placa2 || "";
     els.vehiclePlaca3.value = vehicle.placa3 || "";
     
-    // Select correct values after a brief timeout to let options render if needed
-    setTimeout(() => {
-      els.vehicleCooperado.value = vehicle.cooperado || "";
-      els.vehicleTipo.value = vehicle.tipo || "";
-      els.vehicleFrota.value = String(vehicle.frota);
-    }, 50);
+    els.vehicleTipo.value = vehicle.tipo || "";
+    els.vehicleFrota.value = String(vehicle.frota);
+    
+    // Set searchable select values
+    const coopName = getCooperadoName(vehicle.cooperado);
+    if (vehicle.cooperado && coopName !== "Carregando...") {
+      selectCooperadoCombobox(vehicle.cooperado, coopName);
+    }
   } else {
     els.vehicleModalTitle.textContent = "Novo Veículo";
   }
@@ -1342,16 +1398,31 @@ async function loadCooperadosData() {
     </tr>
   `;
   
+  const page = appState.cooperadosPage;
+  const limit = 30;
+  const from = page * limit;
+  const to = from + limit - 1;
+  const search = appState.cooperadosSearch;
+  
   try {
-    const { data, error } = await supabaseClient
+    let query = supabaseClient
       .from("cooperado")
       .select("*")
+      .or("status.is.null,status.neq.inativo")
       .order("nome");
       
+    if (search) {
+      // Search by name OR exact matches in contact array
+      query = query.or(`nome.ilike.%${search}%,idContatos.cs.{"${search}"}`);
+    }
+    
+    const { data, error } = await query.range(from, to);
     if (error) throw error;
     
-    // Filter out inactive cooperados (soft deleted)
-    appState.cooperados = (data || []).filter(c => c.status !== 'inativo');
+    appState.cooperadosCrudList = data || [];
+    appState.cooperadosHasMore = (data && data.length === limit);
+    
+    updateCooperadosPaginationUI();
     renderCooperadosTable();
   } catch (err) {
     console.error("Erro ao carregar cooperados:", err);
@@ -1369,19 +1440,7 @@ async function loadCooperadosData() {
 function renderCooperadosTable() {
   els.crudCooperadosTbody.innerHTML = "";
   
-  const search = appState.cooperadosSearch.toLowerCase();
-  
-  const filtered = appState.cooperados.filter(c => {
-    const nameMatch = c.nome && c.nome.toLowerCase().includes(search);
-    
-    // Check if search term matches any contact ID
-    let contactsMatch = false;
-    if (c.idContatos && Array.isArray(c.idContatos)) {
-      contactsMatch = c.idContatos.some(contact => contact && contact.toLowerCase().includes(search));
-    }
-    
-    return !search || nameMatch || contactsMatch;
-  });
+  const filtered = appState.cooperadosCrudList;
   
   if (filtered.length === 0) {
     els.crudCooperadosTbody.innerHTML = `
@@ -1595,14 +1654,14 @@ async function handleCooperadoFormSubmit(e) {
 }
 
 function editCooperado(id) {
-  const cooperado = appState.cooperados.find(c => c.id === id);
+  const cooperado = appState.cooperadosCrudList.find(c => c.id === id);
   if (cooperado) {
     openCooperadoModal(cooperado);
   }
 }
 
 async function deleteCooperado(id) {
-  const cooperado = appState.cooperados.find(c => c.id === id);
+  const cooperado = appState.cooperadosCrudList.find(c => c.id === id);
   if (!cooperado) return;
   
   const confirmDelete = confirm(`Deseja realmente inativar o cooperado ${cooperado.nome}?`);
@@ -1625,5 +1684,117 @@ async function deleteCooperado(id) {
     Toast.show("Erro ao inativar", err.message || "Tente novamente mais tarde.", "error");
   }
 }
+
+// ==========================================
+// PAGINATION HELPERS
+// ==========================================
+
+function navigateVehiclesPage(direction) {
+  appState.vehiclesPage += direction;
+  if (appState.vehiclesPage < 0) appState.vehiclesPage = 0;
+  loadVehiclesData();
+}
+
+function updateVehiclesPaginationUI() {
+  els.vehiclesPaginationInfo.textContent = `Página ${appState.vehiclesPage + 1}`;
+  els.btnPrevVehiclesPage.disabled = (appState.vehiclesPage === 0);
+  els.btnNextVehiclesPage.disabled = !appState.vehiclesHasMore;
+}
+
+function navigateCooperadosPage(direction) {
+  appState.cooperadosPage += direction;
+  if (appState.cooperadosPage < 0) appState.cooperadosPage = 0;
+  loadCooperadosData();
+}
+
+function updateCooperadosPaginationUI() {
+  els.cooperadosPaginationInfo.textContent = `Página ${appState.cooperadosPage + 1}`;
+  els.btnPrevCooperadosPage.disabled = (appState.cooperadosPage === 0);
+  els.btnNextCooperadosPage.disabled = !appState.cooperadosHasMore;
+}
+
+// ==========================================
+// SEARCHABLE SELECT (COMBOBOX) HELPERS
+// ==========================================
+
+let comboboxState = {
+  selectedId: "",
+  selectedName: ""
+};
+
+function filterCooperadosDropdown() {
+  const query = els.vehicleCooperadoSearch.value.trim().toLowerCase();
+  
+  // Show dropdown
+  els.vehicleCooperadoDropdown.classList.add("show");
+  
+  // Filter active cooperados in appState.cooperados
+  const activeCoops = appState.cooperados.filter(c => c.status !== 'inativo');
+  
+  const filtered = activeCoops.filter(c => {
+    return c.nome && c.nome.toLowerCase().includes(query);
+  });
+  
+  renderCooperadosDropdown(filtered);
+}
+
+function renderCooperadosDropdown(list) {
+  els.vehicleCooperadoDropdown.innerHTML = "";
+  
+  if (list.length === 0) {
+    els.vehicleCooperadoDropdown.innerHTML = `<div class="searchable-select-item no-results">Nenhum cooperado encontrado</div>`;
+    return;
+  }
+  
+  // Render up to 50 items for performance
+  list.slice(0, 50).forEach(c => {
+    const div = document.createElement("div");
+    div.className = "searchable-select-item";
+    div.textContent = c.nome;
+    div.addEventListener("click", () => {
+      selectCooperadoCombobox(c.id, c.nome);
+    });
+    els.vehicleCooperadoDropdown.appendChild(div);
+  });
+}
+
+function selectCooperadoCombobox(id, name) {
+  comboboxState.selectedId = id;
+  comboboxState.selectedName = name;
+  
+  els.vehicleCooperadoSearch.value = name;
+  els.vehicleCooperado.value = id;
+  
+  hideCooperadosDropdown();
+}
+
+function showCooperadosDropdown() {
+  els.vehicleCooperadoDropdown.classList.add("show");
+  filterCooperadosDropdown();
+}
+
+function hideCooperadosDropdown() {
+  els.vehicleCooperadoDropdown.classList.remove("show");
+}
+
+function handleSearchableSelectClickOutside(e) {
+  const wrapper = document.querySelector(".searchable-select-wrapper");
+  if (wrapper && !wrapper.contains(e.target)) {
+    hideCooperadosDropdown();
+    
+    if (!els.vehicleCooperadoSearch.value.trim()) {
+      els.vehicleCooperado.value = "";
+      comboboxState.selectedId = "";
+      comboboxState.selectedName = "";
+    } else if (comboboxState.selectedName) {
+      els.vehicleCooperadoSearch.value = comboboxState.selectedName;
+      els.vehicleCooperado.value = comboboxState.selectedId;
+    } else {
+      els.vehicleCooperadoSearch.value = "";
+      els.vehicleCooperado.value = "";
+    }
+  }
+}
+
 
 

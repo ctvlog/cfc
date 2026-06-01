@@ -1487,4 +1487,77 @@ body {
   color: #ffffff;
 }
 
+/* Pagination UI styling */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.18);
+  border-top: 1px solid var(--border-color);
+  border-bottom-left-radius: 11px;
+  border-bottom-right-radius: 11px;
+}
+
+.pagination-info {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* Searchable Select (Combobox) styling */
+.searchable-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.searchable-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  z-index: 1100;
+  box-shadow: var(--shadow);
+  margin-top: 4px;
+  display: none;
+}
+
+.searchable-select-dropdown.show {
+  display: block;
+}
+
+.searchable-select-item {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.searchable-select-item:hover {
+  background-color: var(--accent-bg-glow);
+  color: var(--accent);
+}
+
+.searchable-select-item.no-results {
+  color: var(--text-muted);
+  font-style: italic;
+  cursor: default;
+}
+
+.searchable-select-item.no-results:hover {
+  background-color: transparent;
+}
+
+
 
