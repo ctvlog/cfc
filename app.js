@@ -51,7 +51,7 @@ const els = {
   loginEmail: document.getElementById("login-email"),
   loginPass: document.getElementById("login-password"),
   loginBtn: document.getElementById("login-btn"),
-  
+
   // Dashboard
   sidebar: document.getElementById("sidebar"),
   toggleSidebarBtn: document.getElementById("toggle-sidebar-btn"),
@@ -59,7 +59,7 @@ const els = {
   logoutBtn: document.getElementById("logout-btn"),
   userEmailDisplay: document.getElementById("user-email"),
   userAvatarDisplay: document.getElementById("user-avatar"),
-  
+
   // Toolbar
   searchInput: document.getElementById("search-input"),
   vehicleTypeFilter: document.getElementById("vehicle-type-filter"),
@@ -68,16 +68,16 @@ const els = {
   btnToggleAutoRefresh: document.getElementById("btn-toggle-auto-refresh"),
   refreshCountdownText: document.getElementById("refresh-countdown-text"),
   refreshIndicatorDot: document.getElementById("refresh-indicator-dot"),
-  
+
   // Stats
   statTotalQueues: document.getElementById("stat-total-queues"),
   statTotalVehicles: document.getElementById("stat-total-vehicles"),
   statTotalFrota: document.getElementById("stat-total-frota"),
   statTotalRecusas: document.getElementById("stat-total-recusas"),
-  
+
   // Content View
   queuesViewport: document.getElementById("queues-viewport"),
-  
+
   // Modal
   modalBackdrop: document.getElementById("modal-backdrop"),
   modalTitle: document.getElementById("modal-title"),
@@ -136,7 +136,7 @@ const els = {
 // TOAST SYSTEM
 const Toast = {
   container: null,
-  
+
   init() {
     this.container = document.getElementById("toast-container");
     if (!this.container) {
@@ -145,13 +145,13 @@ const Toast = {
       document.body.appendChild(this.container);
     }
   },
-  
+
   show(title, message, type = "info", duration = 4000) {
     if (!this.container) this.init();
-    
+
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
-    
+
     // Choose icon based on toast type
     let iconHTML = "";
     if (type === "success") {
@@ -163,7 +163,7 @@ const Toast = {
     } else {
       iconHTML = `<i data-lucide="info" class="toast-icon"></i>`;
     }
-    
+
     toast.innerHTML = `
       ${iconHTML}
       <div class="toast-content">
@@ -172,22 +172,22 @@ const Toast = {
       </div>
       <button class="toast-close"><i data-lucide="x"></i></button>
     `;
-    
+
     this.container.appendChild(toast);
     lucide.createIcons();
-    
+
     // Auto-remove
     const removeTimeout = setTimeout(() => {
       this.remove(toast);
     }, duration);
-    
+
     // Close button event
     toast.querySelector(".toast-close").addEventListener("click", () => {
       clearTimeout(removeTimeout);
       this.remove(toast);
     });
   },
-  
+
   remove(toast) {
     toast.classList.add("removing");
     toast.addEventListener("animationend", () => {
@@ -216,20 +216,20 @@ function getRelativeTime(isoString) {
   const start = new Date(isoString);
   const now = new Date();
   const diffMs = now - start;
-  
+
   if (diffMs < 0) return "Entrou agora";
-  
+
   const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 60) {
     return `${diffMins} min`;
   }
-  
+
   const diffHours = Math.floor(diffMins / 60);
   const remainingMins = diffMins % 60;
   if (diffHours < 24) {
     return `${diffHours}h ${remainingMins}m`;
   }
-  
+
   const diffDays = Math.floor(diffHours / 24);
   const remainingHours = diffHours % 24;
   return `${diffDays}d ${remainingHours}h`;
@@ -237,7 +237,7 @@ function getRelativeTime(isoString) {
 
 function debounce(func, delay) {
   let timer;
-  return function(...args) {
+  return function (...args) {
     clearTimeout(timer);
     timer = setTimeout(() => func.apply(this, args), delay);
   };
@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   Toast.init();
   setupTheme();
   setupEventListeners();
-  
+
   // Check active Supabase session
   const { data: { session }, error } = await supabaseClient.auth.getSession();
   if (session) {
@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } else {
     handleSignOut();
   }
-  
+
   // Listen to Auth Changes
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (session) {
@@ -272,17 +272,17 @@ async function handleSignIn(user) {
   appState.user = user;
   els.userEmailDisplay.textContent = user.email;
   els.userAvatarDisplay.textContent = user.email.substring(0, 2).toUpperCase();
-  
+
   els.authSection.classList.add("hidden");
   els.dashboardSection.classList.remove("hidden");
-  
+
   // Load sidebar collapsed state
   const sidebarSaved = localStorage.getItem("cfc_sidebar_collapsed");
   if (sidebarSaved === "true") {
     appState.sidebarCollapsed = true;
     els.sidebar.classList.add("collapsed");
   }
-  
+
   // Check user role from profiles table
   try {
     const { data: profile, error } = await supabaseClient
@@ -290,9 +290,9 @@ async function handleSignIn(user) {
       .select("role")
       .eq("id", user.id)
       .single();
-      
+
     if (error) throw error;
-    
+
     if (profile && profile.role === 'admin') {
       appState.isAdmin = true;
       document.querySelector(".user-role").textContent = "Administrador";
@@ -311,7 +311,7 @@ async function handleSignIn(user) {
     els.sidebarAdminNav.classList.add("hidden");
     switchView("queues");
   }
-  
+
   // Load data
   loadQueuesData(true);
   startAutoRefresh();
@@ -324,11 +324,11 @@ function handleSignOut() {
   appState.vehicles = [];
   appState.cooperados = [];
   appState.veiculosTiposActive = [];
-  
+
   stopAutoRefresh();
   els.authSection.classList.remove("hidden");
   els.dashboardSection.classList.add("hidden");
-  
+
   // Reset navigation states
   els.navBtnQueues.classList.add("active");
   els.navBtnVehicles.classList.remove("active");
@@ -338,7 +338,7 @@ function handleSignOut() {
   els.queuesViewport.classList.remove("hidden");
   const controlBar = document.querySelector(".control-bar");
   if (controlBar) controlBar.classList.remove("hidden");
-  
+
   // Clear sensitive UI elements
   els.queuesViewport.innerHTML = "";
   els.crudVehiclesTbody.innerHTML = "";
@@ -349,7 +349,7 @@ function handleSignOut() {
 
 // THEME HANDLING
 function setupTheme() {
-  const savedTheme = localStorage.getItem("cfc_theme") || "dark";
+  const savedTheme = localStorage.getItem("cfc_theme") || "light";
   setTheme(savedTheme);
 }
 
@@ -357,7 +357,7 @@ function setTheme(theme) {
   appState.theme = theme;
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("cfc_theme", theme);
-  
+
   // Update theme toggle icon
   if (theme === "light") {
     els.themeToggleBtn.innerHTML = `<i data-lucide="moon"></i>`;
@@ -374,23 +374,23 @@ function setupEventListeners() {
     e.preventDefault();
     const email = els.loginEmail.value.trim();
     const password = els.loginPass.value;
-    
+
     if (!email || !password) {
       Toast.show("Campos Vazios", "Por favor preencha email e senha.", "warning");
       return;
     }
-    
+
     els.loginBtn.disabled = true;
     els.loginBtn.innerHTML = `<div class="spinner"></div><span>Entrando...</span>`;
-    
+
     try {
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
-      
+
       Toast.show("Bem-vindo!", "Autenticação realizada com sucesso.", "success");
     } catch (error) {
       Toast.show("Erro ao entrar", error.message || "Credenciais inválidas.", "error");
@@ -398,7 +398,7 @@ function setupEventListeners() {
       els.loginBtn.innerHTML = `<span>Entrar</span>`;
     }
   });
-  
+
   // Logout
   els.logoutBtn.addEventListener("click", async () => {
     try {
@@ -408,30 +408,30 @@ function setupEventListeners() {
       Toast.show("Erro ao Sair", "Ocorreu um erro no logout.", "error");
     }
   });
-  
+
   // Toggle Sidebar
   els.toggleSidebarBtn.addEventListener("click", () => {
     appState.sidebarCollapsed = !appState.sidebarCollapsed;
     els.sidebar.classList.toggle("collapsed", appState.sidebarCollapsed);
     localStorage.setItem("cfc_sidebar_collapsed", appState.sidebarCollapsed);
   });
-  
+
   // Toggle Theme
   els.themeToggleBtn.addEventListener("click", () => {
     const newTheme = appState.theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
     Toast.show(
-      "Tema Alterado", 
-      `Interface ajustada para o modo ${newTheme === "dark" ? "escuro" : "claro"}.`, 
+      "Tema Alterado",
+      `Interface ajustada para o modo ${newTheme === "dark" ? "escuro" : "claro"}.`,
       "info"
     );
   });
-  
+
   // Manual Refresh
   els.btnRefresh.addEventListener("click", () => {
     loadQueuesData(false);
   });
-  
+
   // Toggle Auto Refresh
   els.btnToggleAutoRefresh.addEventListener("click", () => {
     appState.autoRefresh.active = !appState.autoRefresh.active;
@@ -444,29 +444,29 @@ function setupEventListeners() {
     }
     updateAutoRefreshUI();
   });
-  
+
   // Search & Filters inputs
   els.searchInput.addEventListener("input", (e) => {
     appState.filters.search = e.target.value.toLowerCase().trim();
     applyFiltersAndRender();
   });
-  
+
   els.vehicleTypeFilter.addEventListener("change", (e) => {
     appState.filters.vehicleType = e.target.value;
     applyFiltersAndRender();
   });
-  
+
   els.frotaFilter.addEventListener("change", (e) => {
     appState.filters.frota = e.target.value;
     applyFiltersAndRender();
   });
-  
+
   // Modal close
   els.modalCloseBtn.addEventListener("click", closeModal);
   els.modalBackdrop.addEventListener("click", (e) => {
     if (e.target === els.modalBackdrop) closeModal();
   });
-  
+
   // Admin Navigation event listeners
   els.navBtnQueues.addEventListener("click", () => switchView("queues"));
   els.navBtnVehicles.addEventListener("click", () => switchView("vehicles"));
@@ -545,34 +545,34 @@ async function loadQueuesData(showLoadingIndicator = false) {
   if (showLoadingIndicator) {
     renderSkeletons();
   }
-  
+
   try {
     const { data, error } = await supabaseClient
       .from("vw_filas")
       .select("*");
-      
+
     if (error) throw error;
-    
+
     appState.queues = data || [];
-    
+
     // Extract unique vehicle types for filter select
     const typesSet = new Set();
     appState.queues.forEach(item => {
       if (item.tipo) typesSet.add(item.tipo);
     });
     appState.vehicleTypes = Array.from(typesSet).sort();
-    
+
     // Populate vehicle type dropdown if we just loaded or it's empty
     populateVehicleTypeSelect();
-    
+
     // Apply filters and render
     applyFiltersAndRender();
     updateStats();
-    
+
     // Reset auto-refresh timer to max seconds upon successful data load
     appState.autoRefresh.countdown = appState.autoRefresh.maxSeconds;
     updateAutoRefreshUI();
-    
+
   } catch (error) {
     console.error("Erro ao carregar dados do supabase:", error);
     Toast.show("Erro ao carregar dados", error.message || "Verifique sua conexão ou permissões.", "error");
@@ -583,14 +583,14 @@ async function loadQueuesData(showLoadingIndicator = false) {
 function populateVehicleTypeSelect() {
   const currentVal = els.vehicleTypeFilter.value;
   els.vehicleTypeFilter.innerHTML = '<option value="">Todos os tipos</option>';
-  
+
   appState.vehicleTypes.forEach(type => {
     const option = document.createElement("option");
     option.value = type;
     option.textContent = type;
     els.vehicleTypeFilter.appendChild(option);
   });
-  
+
   // Restore value if still present
   if (appState.vehicleTypes.includes(currentVal)) {
     els.vehicleTypeFilter.value = currentVal;
@@ -604,21 +604,21 @@ function applyFiltersAndRender() {
   const search = appState.filters.search;
   const vType = appState.filters.vehicleType;
   const frota = appState.filters.frota;
-  
+
   // 1. Filter raw records
   const filteredRecords = appState.queues.filter(item => {
     // Search text (checks plates, cooperator name, or queue name)
     const plateMatch = (item.placa && item.placa.toLowerCase().includes(search)) ||
-                       (item.placa2 && item.placa2.toLowerCase().includes(search)) ||
-                       (item.placa3 && item.placa3.toLowerCase().includes(search));
+      (item.placa2 && item.placa2.toLowerCase().includes(search)) ||
+      (item.placa3 && item.placa3.toLowerCase().includes(search));
     const coopMatch = item.nomeCooperado && item.nomeCooperado.toLowerCase().includes(search);
     const queueMatch = item.descFila && item.descFila.toLowerCase().includes(search);
-    
+
     const searchMatch = !search || plateMatch || coopMatch || queueMatch;
-    
+
     // Vehicle Type
     const typeMatch = !vType || item.tipo === vType;
-    
+
     // Frota status
     let frotaMatch = true;
     if (frota === "frota") {
@@ -626,10 +626,10 @@ function applyFiltersAndRender() {
     } else if (frota === "terceiro") {
       frotaMatch = item.frota === false;
     }
-    
+
     return searchMatch && typeMatch && frotaMatch;
   });
-  
+
   // 2. Group by descFila
   const grouped = {};
   filteredRecords.forEach(item => {
@@ -639,7 +639,7 @@ function applyFiltersAndRender() {
     }
     grouped[queueName].push(item);
   });
-  
+
   // 3. Sort items inside each queue by dthRef ascending
   for (const queueName in grouped) {
     grouped[queueName].sort((a, b) => {
@@ -648,7 +648,7 @@ function applyFiltersAndRender() {
       return dateA - dateB;
     });
   }
-  
+
   appState.filteredQueues = grouped;
   renderQueuesGrid();
 }
@@ -656,11 +656,11 @@ function applyFiltersAndRender() {
 // STATS GENERATION
 function updateStats() {
   const queuesCount = Object.keys(appState.filteredQueues).length;
-  
+
   let totalVehicles = 0;
   let totalFrota = 0;
   let totalRecusas = 0;
-  
+
   // Calculate stats from raw queues based on current local view
   appState.queues.forEach(item => {
     totalVehicles++;
@@ -669,7 +669,7 @@ function updateStats() {
       totalRecusas += item.recusas.length;
     }
   });
-  
+
   els.statTotalQueues.textContent = queuesCount;
   els.statTotalVehicles.textContent = totalVehicles;
   els.statTotalFrota.textContent = totalFrota;
@@ -679,7 +679,7 @@ function updateStats() {
 // RENDERING SKELETONS (LOADING VIEW)
 function renderSkeletons() {
   els.queuesViewport.innerHTML = "";
-  
+
   // Create 3 skeleton columns
   for (let i = 0; i < 3; i++) {
     const col = document.createElement("div");
@@ -724,9 +724,9 @@ function renderSkeletons() {
 // RENDER REAL QUEUES TABLE GRID
 function renderQueuesGrid() {
   els.queuesViewport.innerHTML = "";
-  
+
   const queueNames = Object.keys(appState.filteredQueues).sort();
-  
+
   if (queueNames.length === 0) {
     els.queuesViewport.innerHTML = `
       <div class="empty-queue" style="width: 100%; height: 250px;">
@@ -737,13 +737,13 @@ function renderQueuesGrid() {
     lucide.createIcons();
     return;
   }
-  
+
   queueNames.forEach(queueName => {
     const vehicles = appState.filteredQueues[queueName];
-    
+
     const col = document.createElement("div");
     col.className = "queue-column";
-    
+
     // Column Header
     const header = document.createElement("div");
     header.className = "queue-column-header";
@@ -754,14 +754,14 @@ function renderQueuesGrid() {
       <span class="queue-badge">${vehicles.length}</span>
     `;
     col.appendChild(header);
-    
+
     // Column Table Body
     const bodyWrapper = document.createElement("div");
     bodyWrapper.className = "queue-body-wrapper";
-    
+
     const table = document.createElement("table");
     table.className = "queue-table";
-    
+
     // Headers
     table.innerHTML = `
       <thead>
@@ -774,9 +774,9 @@ function renderQueuesGrid() {
         </tr>
       </thead>
     `;
-    
+
     const tbody = document.createElement("tbody");
-    
+
     if (vehicles.length === 0) {
       tbody.innerHTML = `
         <tr>
@@ -791,24 +791,24 @@ function renderQueuesGrid() {
     } else {
       vehicles.forEach((vehicle, index) => {
         const row = document.createElement("tr");
-        
+
         // Position Column
         const posCell = document.createElement("td");
         posCell.className = "pos-cell";
         posCell.innerHTML = `<span class="pos-badge">${index + 1}</span>`;
         row.appendChild(posCell);
-        
+
         // Plates Stack Column (Render Plate styles)
         const plateCell = document.createElement("td");
         plateCell.className = "plate-cell";
-        
+
         const platesStack = document.createElement("div");
         platesStack.className = "plates-stack";
-        
+
         // Render Main Plate (placa)
         const mainPlateHTML = renderPlateBadge(vehicle.placa);
         platesStack.innerHTML = mainPlateHTML;
-        
+
         // Render trailers (placa2, placa3) if present
         if (vehicle.placa2) {
           platesStack.innerHTML += renderPlateBadge(vehicle.placa2, true);
@@ -816,10 +816,10 @@ function renderQueuesGrid() {
         if (vehicle.placa3) {
           platesStack.innerHTML += renderPlateBadge(vehicle.placa3, true);
         }
-        
+
         plateCell.appendChild(platesStack);
         row.appendChild(plateCell);
-        
+
         // Vehicle Type and Cooperado
         const vCell = document.createElement("td");
         vCell.className = "vehicle-cell";
@@ -831,7 +831,7 @@ function renderQueuesGrid() {
           </div>
         `;
         row.appendChild(vCell);
-        
+
         // Frota status
         const fCell = document.createElement("td");
         if (vehicle.frota) {
@@ -840,39 +840,39 @@ function renderQueuesGrid() {
           fCell.innerHTML = `<span class="frota-badge terceiro" title="Veículo Terceirizado"><i data-lucide="user" style="width:10px;height:10px;"></i> Terceiro</span>`;
         }
         row.appendChild(fCell);
-        
+
         // Refusals cell
         const recCell = document.createElement("td");
         recCell.className = "recusa-cell";
         const recCount = vehicle.recusas && Array.isArray(vehicle.recusas) ? vehicle.recusas.length : 0;
-        
+
         if (recCount > 0) {
           const recBadge = document.createElement("span");
           recBadge.className = "recusa-badge";
           recBadge.textContent = recCount;
           recBadge.title = `Visualizar ${recCount} recusa(s) de frete`;
-          
+
           recBadge.addEventListener("click", () => {
             openRefusalsModal(vehicle);
           });
-          
+
           recCell.appendChild(recBadge);
         } else {
           recCell.innerHTML = `<span style="color:var(--text-muted); opacity: 0.3;">-</span>`;
         }
         row.appendChild(recCell);
-        
+
         tbody.appendChild(row);
       });
     }
-    
+
     table.appendChild(tbody);
     bodyWrapper.appendChild(table);
     col.appendChild(bodyWrapper);
-    
+
     els.queuesViewport.appendChild(col);
   });
-  
+
   // Re-generate lucide icons in dynamically created elements
   lucide.createIcons();
 }
@@ -881,16 +881,16 @@ function renderQueuesGrid() {
 function renderPlateBadge(plateString, isTrailer = false) {
   if (!plateString) return "";
   const cleanedPlate = plateString.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  
+
   // Format standard or Mercosul plates with a dash for readability
   let formattedPlate = cleanedPlate;
   if (cleanedPlate.length === 7) {
     formattedPlate = cleanedPlate.substring(0, 3) + "-" + cleanedPlate.substring(3);
   }
-  
+
   const badgeClass = isTrailer ? "plate-badge-trailer" : "plate-badge-main";
   const titleText = isTrailer ? "Reboque" : "Placa Principal";
-  
+
   return `
     <span class="plate-badge ${badgeClass}" title="${titleText}">${formattedPlate}</span>
   `;
@@ -900,26 +900,26 @@ function renderPlateBadge(plateString, isTrailer = false) {
 function openRefusalsModal(vehicle) {
   els.modalTitle.textContent = `Histórico de Recusas - Placa: ${vehicle.placa}`;
   els.modalBody.innerHTML = "";
-  
+
   const timeline = document.createElement("div");
   timeline.className = "history-timeline";
-  
+
   const recusas = vehicle.recusas || [];
-  
+
   // Sort refusals by date descending (newest first)
   const sortedRecusas = [...recusas].sort((a, b) => {
     return new Date(b.created_at) - new Date(a.created_at);
   });
-  
+
   sortedRecusas.forEach(rec => {
     const item = document.createElement("div");
-    
+
     // Parse description to find "# Fim de fila: true/false"
     const textDesc = rec.descricao || "";
-    
+
     let isFimFila = false;
     let hasFimFilaInfo = false;
-    
+
     if (textDesc.includes("Fim de fila: true") || textDesc.includes("Fim de fila:  true")) {
       isFimFila = true;
       hasFimFilaInfo = true;
@@ -927,10 +927,10 @@ function openRefusalsModal(vehicle) {
       isFimFila = false;
       hasFimFilaInfo = true;
     }
-    
+
     // Clean up description (remove the "# Fim de fila" block from main text if desired, or format nicely)
     const cleanedDesc = textDesc.replace(/# Fim de fila:.*$/m, "").trim();
-    
+
     // Set custom classes for timeline color
     let statusClass = "";
     let badgeHTML = "";
@@ -943,7 +943,7 @@ function openRefusalsModal(vehicle) {
         badgeHTML = `<span class="refusal-badge-in-desc yellow"><i data-lucide="check" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Posição preservada</span>`;
       }
     }
-    
+
     item.className = `history-item ${statusClass}`;
     item.innerHTML = `
       <div class="history-bullet"></div>
@@ -953,10 +953,10 @@ function openRefusalsModal(vehicle) {
     `;
     timeline.appendChild(item);
   });
-  
+
   els.modalBody.appendChild(timeline);
   els.modalBackdrop.classList.add("show");
-  
+
   lucide.createIcons();
 }
 
@@ -967,13 +967,13 @@ function closeModal() {
 // AUTO REFRESH TIMER MECHANISMS
 function startAutoRefresh() {
   if (appState.autoRefresh.intervalId) clearInterval(appState.autoRefresh.intervalId);
-  
+
   appState.autoRefresh.countdown = appState.autoRefresh.maxSeconds;
   updateAutoRefreshUI();
-  
+
   appState.autoRefresh.intervalId = setInterval(() => {
     appState.autoRefresh.countdown--;
-    
+
     if (appState.autoRefresh.countdown <= 0) {
       loadQueuesData(false); // Fetch silently (no loading skeletons)
       appState.autoRefresh.countdown = appState.autoRefresh.maxSeconds;
@@ -1012,45 +1012,45 @@ function switchView(view) {
     Toast.show("Acesso Negado", "Apenas administradores possuem este acesso.", "error");
     return;
   }
-  
+
   appState.currentView = view;
   const controlBar = document.querySelector(".control-bar");
-  
+
   // Reset all views to hidden
   els.queuesViewport.classList.add("hidden");
   els.vehiclesCrudSection.classList.add("hidden");
   els.cooperadosCrudSection.classList.add("hidden");
   if (controlBar) controlBar.classList.add("hidden");
-  
+
   // Reset active navigation styles
   els.navBtnQueues.classList.remove("active");
   els.navBtnVehicles.classList.remove("active");
   els.navBtnCooperados.classList.remove("active");
-  
+
   if (view === "vehicles") {
     els.vehiclesCrudSection.classList.remove("hidden");
     els.navBtnVehicles.classList.add("active");
-    
+
     stopAutoRefresh();
     els.refreshCountdownText.textContent = "Atualização pausada";
     els.refreshIndicatorDot.className = "indicator-dot inactive";
-    
+
     loadVehiclesData();
   } else if (view === "cooperados") {
     els.cooperadosCrudSection.classList.remove("hidden");
     els.navBtnCooperados.classList.add("active");
-    
+
     stopAutoRefresh();
     els.refreshCountdownText.textContent = "Atualização pausada";
     els.refreshIndicatorDot.className = "indicator-dot inactive";
-    
+
     loadCooperadosData();
   } else {
     // default/queues view
     els.queuesViewport.classList.remove("hidden");
     if (controlBar) controlBar.classList.remove("hidden");
     els.navBtnQueues.classList.add("active");
-    
+
     if (appState.autoRefresh.active) {
       startAutoRefresh();
     }
@@ -1065,20 +1065,20 @@ async function loadAdminAuxiliaryData() {
       .from("cooperado")
       .select("id, nome, status, idContatos")
       .order("nome");
-      
+
     if (coopError) throw coopError;
     appState.cooperados = cooperadosData || [];
-    
+
     // Fetch active Vehicle Types
     const { data: typesData, error: typesError } = await supabaseClient
       .from("veiculosTipos")
       .select("nome")
       .eq("status", "ativo")
       .order("nome");
-      
+
     if (typesError) throw typesError;
     appState.veiculosTiposActive = typesData || [];
-    
+
     populateModalDropdowns();
   } catch (err) {
     console.error("Erro ao carregar dados auxiliares do admin:", err);
@@ -1111,13 +1111,13 @@ async function loadVehiclesData() {
       </td>
     </tr>
   `;
-  
+
   const page = appState.vehiclesPage;
   const limit = 30;
   const from = page * limit;
   const to = from + limit - 1;
   const search = appState.vehiclesSearch;
-  
+
   try {
     let cooperadoIds = [];
     if (search) {
@@ -1131,13 +1131,13 @@ async function loadVehiclesData() {
         cooperadoIds = coops.map(c => c.id);
       }
     }
-    
+
     let query = supabaseClient
       .from("veiculos")
       .select("*")
       .or("status.is.null,status.neq.inativo")
       .order("created_at", { ascending: false });
-      
+
     if (search) {
       if (cooperadoIds.length > 0) {
         const idsList = cooperadoIds.map(id => `cooperado.eq.${id}`).join(",");
@@ -1146,13 +1146,13 @@ async function loadVehiclesData() {
         query = query.or(`placa.ilike.%${search}%,placa2.ilike.%${search}%,placa3.ilike.%${search}%`);
       }
     }
-    
+
     const { data, error } = await query.range(from, to);
     if (error) throw error;
-    
+
     appState.vehicles = data || [];
     appState.vehiclesHasMore = (data && data.length === limit);
-    
+
     updateVehiclesPaginationUI();
     renderVehiclesTable();
   } catch (err) {
@@ -1170,9 +1170,9 @@ async function loadVehiclesData() {
 
 function renderVehiclesTable() {
   els.crudVehiclesTbody.innerHTML = "";
-  
+
   const filtered = appState.vehicles;
-  
+
   if (filtered.length === 0) {
     els.crudVehiclesTbody.innerHTML = `
       <tr>
@@ -1183,35 +1183,35 @@ function renderVehiclesTable() {
     `;
     return;
   }
-  
+
   filtered.forEach(v => {
     const row = document.createElement("tr");
-    
+
     // Placa Principal
     const tdPlaca = document.createElement("td");
     tdPlaca.innerHTML = renderPlateBadge(v.placa);
     row.appendChild(tdPlaca);
-    
+
     // Placa Reboque 1
     const tdPlaca2 = document.createElement("td");
     tdPlaca2.innerHTML = v.placa2 ? renderPlateBadge(v.placa2, true) : '<span style="color:var(--text-muted);opacity:0.4;">-</span>';
     row.appendChild(tdPlaca2);
-    
+
     // Placa Reboque 2
     const tdPlaca3 = document.createElement("td");
     tdPlaca3.innerHTML = v.placa3 ? renderPlateBadge(v.placa3, true) : '<span style="color:var(--text-muted);opacity:0.4;">-</span>';
     row.appendChild(tdPlaca3);
-    
+
     // Cooperado
     const tdCoop = document.createElement("td");
     tdCoop.textContent = getCooperadoName(v.cooperado);
     row.appendChild(tdCoop);
-    
+
     // Tipo
     const tdTipo = document.createElement("td");
     tdTipo.textContent = v.tipo || "N/D";
     row.appendChild(tdTipo);
-    
+
     // Vínculo
     const tdVinculo = document.createElement("td");
     if (v.frota) {
@@ -1220,35 +1220,35 @@ function renderVehiclesTable() {
       tdVinculo.innerHTML = `<span class="frota-badge terceiro"><i data-lucide="user" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Terceiro</span>`;
     }
     row.appendChild(tdVinculo);
-    
+
     // Ações
     const tdActions = document.createElement("td");
     tdActions.style.textAlign = "center";
-    
+
     const divActions = document.createElement("div");
     divActions.className = "crud-action-buttons";
     divActions.style.justifyContent = "center";
-    
+
     const btnEdit = document.createElement("button");
     btnEdit.className = "btn btn-sm btn-secondary";
     btnEdit.innerHTML = `<i data-lucide="edit" style="width:12px;height:12px;"></i>`;
     btnEdit.title = "Editar";
     btnEdit.addEventListener("click", () => editVehicle(v.id));
-    
+
     const btnDel = document.createElement("button");
     btnDel.className = "btn btn-sm btn-danger";
     btnDel.innerHTML = `<i data-lucide="trash-2" style="width:12px;height:12px;"></i>`;
     btnDel.title = "Excluir";
     btnDel.addEventListener("click", () => deleteVehicle(v.id));
-    
+
     divActions.appendChild(btnEdit);
     divActions.appendChild(btnDel);
     tdActions.appendChild(divActions);
     row.appendChild(tdActions);
-    
+
     els.crudVehiclesTbody.appendChild(row);
   });
-  
+
   lucide.createIcons();
 }
 
@@ -1259,24 +1259,24 @@ async function openVehicleModal(vehicle = null) {
   } else {
     populateModalDropdowns();
   }
-  
+
   els.vehicleForm.reset();
   els.vehicleId.value = "";
   els.vehicleCooperadoSearch.value = "";
   els.vehicleCooperado.value = "";
   comboboxState.selectedId = "";
   comboboxState.selectedName = "";
-  
+
   if (vehicle) {
     els.vehicleModalTitle.textContent = "Editar Veículo";
     els.vehicleId.value = vehicle.id;
     els.vehiclePlaca.value = vehicle.placa || "";
     els.vehiclePlaca2.value = vehicle.placa2 || "";
     els.vehiclePlaca3.value = vehicle.placa3 || "";
-    
+
     els.vehicleTipo.value = vehicle.tipo || "";
     els.vehicleFrota.value = String(vehicle.frota);
-    
+
     // Set searchable select values
     const coopName = getCooperadoName(vehicle.cooperado);
     if (vehicle.cooperado && coopName !== "Carregando...") {
@@ -1285,7 +1285,7 @@ async function openVehicleModal(vehicle = null) {
   } else {
     els.vehicleModalTitle.textContent = "Novo Veículo";
   }
-  
+
   els.vehicleModalBackdrop.classList.add("show");
 }
 
@@ -1297,7 +1297,7 @@ function closeVehicleModal() {
 
 async function handleVehicleFormSubmit(e) {
   e.preventDefault();
-  
+
   const id = els.vehicleId.value;
   const placa = els.vehiclePlaca.value.trim().toUpperCase();
   const placa2 = els.vehiclePlaca2.value.trim().toUpperCase() || null;
@@ -1305,12 +1305,12 @@ async function handleVehicleFormSubmit(e) {
   const cooperado = els.vehicleCooperado.value;
   const tipo = els.vehicleTipo.value;
   const frota = els.vehicleFrota.value === "true";
-  
+
   const saveBtn = document.getElementById("btn-save-vehicle");
   const originalHtml = saveBtn.innerHTML;
   saveBtn.disabled = true;
   saveBtn.innerHTML = `<div class="spinner"></div><span>Salvando...</span>`;
-  
+
   const payload = {
     placa,
     placa2,
@@ -1320,8 +1320,64 @@ async function handleVehicleFormSubmit(e) {
     frota,
     status: 'ativo'
   };
-  
+
   try {
+    if (!id) {
+      // Check if vehicle with this plate already exists
+      const { data: existingVehicles, error: checkError } = await supabaseClient
+        .from("veiculos")
+        .select("*")
+        .eq("placa", placa);
+
+      if (checkError) throw checkError;
+
+      if (existingVehicles && existingVehicles.length > 0) {
+        const inactiveVehicle = existingVehicles.find(v => v.status === 'inativo');
+        const activeVehicle = existingVehicles.find(v => v.status !== 'inativo');
+
+        if (activeVehicle) {
+          Toast.show(
+            "Placa já cadastrada",
+            `O veículo com a placa ${placa} já está cadastrado e ativo.`,
+            "warning"
+          );
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalHtml;
+          return;
+        }
+
+        if (inactiveVehicle) {
+          const confirmReactivate = confirm(
+            `O veículo com a placa ${placa} já existe cadastrado e está inativado. Deseja reativá-lo com estes dados?`
+          );
+          if (confirmReactivate) {
+            // Update the existing inactive vehicle instead of inserting a new one
+            const { error: updateError } = await supabaseClient
+              .from("veiculos")
+              .update(payload)
+              .eq("id", inactiveVehicle.id);
+
+            if (updateError) throw updateError;
+
+            Toast.show(
+              "Veículo Reativado",
+              `O veículo placa ${placa} foi reativado com sucesso.`,
+              "success"
+            );
+
+            closeVehicleModal();
+            loadVehiclesData();
+            return;
+          } else {
+            // User chose not to reactivate, cancel save operation
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalHtml;
+            return;
+          }
+        }
+      }
+    }
+
     if (id) {
       // Update
       const { error } = await supabaseClient
@@ -1336,13 +1392,13 @@ async function handleVehicleFormSubmit(e) {
         .insert([payload]);
       if (error) throw error;
     }
-    
+
     Toast.show(
       id ? "Veículo Atualizado" : "Veículo Cadastrado",
       `O veículo placa ${placa} foi salvo com sucesso.`,
       "success"
     );
-    
+
     closeVehicleModal();
     loadVehiclesData();
   } catch (err) {
@@ -1364,18 +1420,18 @@ function editVehicle(id) {
 async function deleteVehicle(id) {
   const vehicle = appState.vehicles.find(v => v.id === id);
   if (!vehicle) return;
-  
+
   const confirmDelete = confirm(`Deseja realmente excluir o veículo com placa ${vehicle.placa}?`);
   if (!confirmDelete) return;
-  
+
   try {
     const { error } = await supabaseClient
       .from("veiculos")
       .update({ status: 'inativo' })
       .eq("id", id);
-      
+
     if (error) throw error;
-    
+
     Toast.show("Veículo Removido", `O veículo com placa ${vehicle.placa} foi removido com sucesso.`, "success");
     loadVehiclesData();
   } catch (err) {
@@ -1397,31 +1453,31 @@ async function loadCooperadosData() {
       </td>
     </tr>
   `;
-  
+
   const page = appState.cooperadosPage;
   const limit = 30;
   const from = page * limit;
   const to = from + limit - 1;
   const search = appState.cooperadosSearch;
-  
+
   try {
     let query = supabaseClient
       .from("cooperado")
       .select("*")
       .or("status.is.null,status.neq.inativo")
       .order("nome");
-      
+
     if (search) {
       // Search by name OR exact matches in contact array
       query = query.or(`nome.ilike.%${search}%,idContatos.cs.{"${search}"}`);
     }
-    
+
     const { data, error } = await query.range(from, to);
     if (error) throw error;
-    
+
     appState.cooperadosCrudList = data || [];
     appState.cooperadosHasMore = (data && data.length === limit);
-    
+
     updateCooperadosPaginationUI();
     renderCooperadosTable();
   } catch (err) {
@@ -1439,9 +1495,9 @@ async function loadCooperadosData() {
 
 function renderCooperadosTable() {
   els.crudCooperadosTbody.innerHTML = "";
-  
+
   const filtered = appState.cooperadosCrudList;
-  
+
   if (filtered.length === 0) {
     els.crudCooperadosTbody.innerHTML = `
       <tr>
@@ -1452,21 +1508,21 @@ function renderCooperadosTable() {
     `;
     return;
   }
-  
+
   filtered.forEach(c => {
     const row = document.createElement("tr");
-    
+
     // Nome
     const tdNome = document.createElement("td");
     tdNome.textContent = c.nome || "Sem Nome";
     tdNome.style.fontWeight = "600";
     row.appendChild(tdNome);
-    
+
     // Contatos (idContatos)
     const tdContatos = document.createElement("td");
     const tagsWrapper = document.createElement("div");
     tagsWrapper.className = "contact-tags-list";
-    
+
     const contacts = c.idContatos || [];
     if (contacts.length === 0) {
       tagsWrapper.innerHTML = '<span style="color:var(--text-muted); opacity:0.4;">Nenhum contato</span>';
@@ -1480,35 +1536,35 @@ function renderCooperadosTable() {
     }
     tdContatos.appendChild(tagsWrapper);
     row.appendChild(tdContatos);
-    
+
     // Ações
     const tdActions = document.createElement("td");
     tdActions.style.textAlign = "center";
-    
+
     const divActions = document.createElement("div");
     divActions.className = "crud-action-buttons";
     divActions.style.justifyContent = "center";
-    
+
     const btnEdit = document.createElement("button");
     btnEdit.className = "btn btn-sm btn-secondary";
     btnEdit.innerHTML = `<i data-lucide="edit" style="width:12px;height:12px;"></i>`;
     btnEdit.title = "Editar";
     btnEdit.addEventListener("click", () => editCooperado(c.id));
-    
+
     const btnDel = document.createElement("button");
     btnDel.className = "btn btn-sm btn-danger";
     btnDel.innerHTML = `<i data-lucide="trash-2" style="width:12px;height:12px;"></i>`;
     btnDel.title = "Excluir";
     btnDel.addEventListener("click", () => deleteCooperado(c.id));
-    
+
     divActions.appendChild(btnEdit);
     divActions.appendChild(btnDel);
     tdActions.appendChild(divActions);
     row.appendChild(tdActions);
-    
+
     els.crudCooperadosTbody.appendChild(row);
   });
-  
+
   lucide.createIcons();
 }
 
@@ -1516,19 +1572,19 @@ function openCooperadoModal(cooperado = null) {
   els.cooperadoForm.reset();
   els.cooperadoId.value = "";
   appState.cooperadoFormContacts = [];
-  
+
   if (cooperado) {
     els.cooperadoModalTitle.textContent = "Editar Cooperado";
     els.cooperadoId.value = cooperado.id;
     els.cooperadoNome.value = cooperado.nome || "";
-    
+
     if (cooperado.idContatos && Array.isArray(cooperado.idContatos)) {
       appState.cooperadoFormContacts = [...cooperado.idContatos];
     }
   } else {
     els.cooperadoModalTitle.textContent = "Novo Cooperado";
   }
-  
+
   renderFormContactTags();
   els.cooperadoModalBackdrop.classList.add("show");
 }
@@ -1543,36 +1599,36 @@ function closeCooperadoModal() {
 function addContactTag() {
   const inputVal = els.cooperadoContactInput.value.trim();
   if (!inputVal) return;
-  
+
   // Clean special characters: allow only alphanumeric
   const cleaned = inputVal.replace(/[^A-Za-z0-9]/g, "");
-  
+
   if (!cleaned) {
     Toast.show("Formato inválido", "Apenas caracteres alfanuméricos são permitidos para contatos.", "warning");
     return;
   }
-  
+
   // Check duplicate
   if (appState.cooperadoFormContacts.includes(cleaned)) {
     Toast.show("Contato Duplicado", "Este ID de contato já foi adicionado.", "warning");
     return;
   }
-  
+
   appState.cooperadoFormContacts.push(cleaned);
   renderFormContactTags();
-  
+
   els.cooperadoContactInput.value = "";
   els.cooperadoContactInput.focus();
 }
 
 function renderFormContactTags() {
   els.cooperadoContactsTagsContainer.innerHTML = "";
-  
+
   if (appState.cooperadoFormContacts.length === 0) {
     els.cooperadoContactsTagsContainer.innerHTML = '<span style="color:var(--text-muted);font-size:0.75rem;opacity:0.6;padding:4px;">Nenhum contato adicionado ainda.</span>';
     return;
   }
-  
+
   appState.cooperadoFormContacts.forEach(tag => {
     const span = document.createElement("span");
     span.className = "tag-badge";
@@ -1582,42 +1638,42 @@ function renderFormContactTags() {
         <i data-lucide="x" style="width:10px;height:10px;"></i>
       </button>
     `;
-    
+
     // Remove button listener
     span.querySelector(".btn-remove-tag").addEventListener("click", () => {
       appState.cooperadoFormContacts = appState.cooperadoFormContacts.filter(t => t !== tag);
       renderFormContactTags();
     });
-    
+
     els.cooperadoContactsTagsContainer.appendChild(span);
   });
-  
+
   lucide.createIcons();
 }
 
 async function handleCooperadoFormSubmit(e) {
   e.preventDefault();
-  
+
   const id = els.cooperadoId.value;
   const nome = els.cooperadoNome.value.trim();
   const idContatos = appState.cooperadoFormContacts;
-  
+
   if (!nome) {
     Toast.show("Campos Vazios", "O nome do cooperado é obrigatório.", "warning");
     return;
   }
-  
+
   const saveBtn = document.getElementById("btn-save-cooperado");
   const originalHtml = saveBtn.innerHTML;
   saveBtn.disabled = true;
   saveBtn.innerHTML = `<div class="spinner"></div><span>Salvando...</span>`;
-  
+
   const payload = {
     nome,
     idContatos,
     status: 'ativo'
   };
-  
+
   try {
     if (id) {
       // Update
@@ -1633,13 +1689,13 @@ async function handleCooperadoFormSubmit(e) {
         .insert([payload]);
       if (error) throw error;
     }
-    
+
     Toast.show(
       id ? "Cooperado Atualizado" : "Cooperado Cadastrado",
       `O cooperado ${nome} foi salvo com sucesso.`,
       "success"
     );
-    
+
     closeCooperadoModal();
     loadCooperadosData();
     // Refresh vehicle dropdown values in memory
@@ -1663,18 +1719,18 @@ function editCooperado(id) {
 async function deleteCooperado(id) {
   const cooperado = appState.cooperadosCrudList.find(c => c.id === id);
   if (!cooperado) return;
-  
+
   const confirmDelete = confirm(`Deseja realmente inativar o cooperado ${cooperado.nome}?`);
   if (!confirmDelete) return;
-  
+
   try {
     const { error } = await supabaseClient
       .from("cooperado")
       .update({ status: 'inativo' })
       .eq("id", id);
-      
+
     if (error) throw error;
-    
+
     Toast.show("Cooperado Inativado", `O cooperado ${cooperado.nome} foi inativado com sucesso.`, "success");
     loadCooperadosData();
     // Refresh vehicle dropdown values in memory
@@ -1724,28 +1780,28 @@ let comboboxState = {
 
 function filterCooperadosDropdown() {
   const query = els.vehicleCooperadoSearch.value.trim().toLowerCase();
-  
+
   // Show dropdown
   els.vehicleCooperadoDropdown.classList.add("show");
-  
+
   // Filter active cooperados in appState.cooperados
   const activeCoops = appState.cooperados.filter(c => c.status !== 'inativo');
-  
+
   const filtered = activeCoops.filter(c => {
     return c.nome && c.nome.toLowerCase().includes(query);
   });
-  
+
   renderCooperadosDropdown(filtered);
 }
 
 function renderCooperadosDropdown(list) {
   els.vehicleCooperadoDropdown.innerHTML = "";
-  
+
   if (list.length === 0) {
     els.vehicleCooperadoDropdown.innerHTML = `<div class="searchable-select-item no-results">Nenhum cooperado encontrado</div>`;
     return;
   }
-  
+
   // Render up to 50 items for performance
   list.slice(0, 50).forEach(c => {
     const div = document.createElement("div");
@@ -1761,10 +1817,10 @@ function renderCooperadosDropdown(list) {
 function selectCooperadoCombobox(id, name) {
   comboboxState.selectedId = id;
   comboboxState.selectedName = name;
-  
+
   els.vehicleCooperadoSearch.value = name;
   els.vehicleCooperado.value = id;
-  
+
   hideCooperadosDropdown();
 }
 
@@ -1781,7 +1837,7 @@ function handleSearchableSelectClickOutside(e) {
   const wrapper = document.querySelector(".searchable-select-wrapper");
   if (wrapper && !wrapper.contains(e.target)) {
     hideCooperadosDropdown();
-    
+
     if (!els.vehicleCooperadoSearch.value.trim()) {
       els.vehicleCooperado.value = "";
       comboboxState.selectedId = "";
