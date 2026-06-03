@@ -6,7 +6,7 @@
   <title>Central de Fretes Cootravale</title>
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.0.1">
+  <link rel="stylesheet" href="style.css?v=1.0.2">
   
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -70,13 +70,17 @@
       </div>
       
       <div class="sidebar-content">
-        <!-- Navigation Menu (Only shown to Admins) -->
+        <!-- Navigation Menu -->
         <div id="sidebar-admin-nav" class="hidden">
           <div class="sidebar-section-title">Navegação</div>
           <div class="nav-group" style="margin-bottom: 1.5rem;">
             <button class="nav-item active" id="nav-btn-queues">
               <i data-lucide="layout-grid"></i>
               <span>Filas de Carregamento</span>
+            </button>
+            <button class="nav-item" id="nav-btn-movements">
+              <i data-lucide="history"></i>
+              <span>Movimentações</span>
             </button>
             <button class="nav-item" id="nav-btn-vehicles">
               <i data-lucide="truck"></i>
@@ -319,6 +323,24 @@
           </div>
         </div>
       </section>
+
+      <!-- Movements Timeline Viewport (Initially Hidden) -->
+      <section class="crud-container hidden" id="movements-timeline-section">
+        <div class="crud-header">
+          <div class="crud-title-area">
+            <h2 class="crud-title">Histórico de Movimentações</h2>
+            <span class="crud-subtitle">Últimas 20 movimentações de placas no sistema (retiradas e programações)</span>
+          </div>
+          <button class="btn btn-sm btn-secondary" id="btn-refresh-movements" style="width: auto; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+            <span>Recarregar</span>
+          </button>
+        </div>
+
+        <div id="movements-timeline-container" style="overflow-y: auto; flex: 1; padding-right: 8px;">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
       
     </main>
   </section>
@@ -448,6 +470,6 @@
   </div>
 
   <!-- Main JavaScript File -->
-  <script src="app.js?v=1.0.1"></script>
+  <script src="app.js?v=1.0.2"></script>
 </body>
 </html>

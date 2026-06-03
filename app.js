@@ -87,10 +87,14 @@ const els = {
   // Admin and CRUD elements
   sidebarAdminNav: document.getElementById("sidebar-admin-nav"),
   navBtnQueues: document.getElementById("nav-btn-queues"),
+  navBtnMovements: document.getElementById("nav-btn-movements"),
   navBtnVehicles: document.getElementById("nav-btn-vehicles"),
   navBtnCooperados: document.getElementById("nav-btn-cooperados"),
   vehiclesCrudSection: document.getElementById("vehicles-crud-section"),
   cooperadosCrudSection: document.getElementById("cooperados-crud-section"),
+  movementsTimelineSection: document.getElementById("movements-timeline-section"),
+  btnRefreshMovements: document.getElementById("btn-refresh-movements"),
+  movementsTimelineContainer: document.getElementById("movements-timeline-container"),
   btnNewVehicle: document.getElementById("btn-new-vehicle"),
   btnNewCooperado: document.getElementById("btn-new-cooperado"),
   crudSearchInput: document.getElementById("crud-search-input"),
@@ -297,18 +301,24 @@ async function handleSignIn(user) {
       appState.isAdmin = true;
       document.querySelector(".user-role").textContent = "Administrador";
       els.sidebarAdminNav.classList.remove("hidden");
+      els.navBtnVehicles.classList.remove("hidden");
+      els.navBtnCooperados.classList.remove("hidden");
       loadAdminAuxiliaryData();
     } else {
       appState.isAdmin = false;
       document.querySelector(".user-role").textContent = "Operador";
-      els.sidebarAdminNav.classList.add("hidden");
+      els.sidebarAdminNav.classList.remove("hidden");
+      els.navBtnVehicles.classList.add("hidden");
+      els.navBtnCooperados.classList.add("hidden");
       switchView("queues");
     }
   } catch (err) {
     console.error("Erro ao verificar papel do usuario:", err);
     appState.isAdmin = false;
     document.querySelector(".user-role").textContent = "Operador";
-    els.sidebarAdminNav.classList.add("hidden");
+    els.sidebarAdminNav.classList.remove("hidden");
+    els.navBtnVehicles.classList.add("hidden");
+    els.navBtnCooperados.classList.add("hidden");
     switchView("queues");
   }
 
@@ -331,10 +341,12 @@ function handleSignOut() {
 
   // Reset navigation states
   els.navBtnQueues.classList.add("active");
+  els.navBtnMovements.classList.remove("active");
   els.navBtnVehicles.classList.remove("active");
   els.navBtnCooperados.classList.remove("active");
   els.vehiclesCrudSection.classList.add("hidden");
   els.cooperadosCrudSection.classList.add("hidden");
+  els.movementsTimelineSection.classList.add("hidden");
   els.queuesViewport.classList.remove("hidden");
   const controlBar = document.querySelector(".control-bar");
   if (controlBar) controlBar.classList.remove("hidden");
@@ -469,8 +481,10 @@ function setupEventListeners() {
 
   // Admin Navigation event listeners
   els.navBtnQueues.addEventListener("click", () => switchView("queues"));
+  els.navBtnMovements.addEventListener("click", () => switchView("movements"));
   els.navBtnVehicles.addEventListener("click", () => switchView("vehicles"));
   els.navBtnCooperados.addEventListener("click", () => switchView("cooperados"));
+  els.btnRefreshMovements.addEventListener("click", () => loadMovementsData());
 
   // Vehicle Modal Open/Close
   els.btnNewVehicle.addEventListener("click", () => openVehicleModal());
@@ -1020,10 +1034,12 @@ function switchView(view) {
   els.queuesViewport.classList.add("hidden");
   els.vehiclesCrudSection.classList.add("hidden");
   els.cooperadosCrudSection.classList.add("hidden");
+  els.movementsTimelineSection.classList.add("hidden");
   if (controlBar) controlBar.classList.add("hidden");
 
   // Reset active navigation styles
   els.navBtnQueues.classList.remove("active");
+  els.navBtnMovements.classList.remove("active");
   els.navBtnVehicles.classList.remove("active");
   els.navBtnCooperados.classList.remove("active");
 
@@ -1045,6 +1061,15 @@ function switchView(view) {
     els.refreshIndicatorDot.className = "indicator-dot inactive";
 
     loadCooperadosData();
+  } else if (view === "movements") {
+    els.movementsTimelineSection.classList.remove("hidden");
+    els.navBtnMovements.classList.add("active");
+
+    stopAutoRefresh();
+    els.refreshCountdownText.textContent = "Atualização pausada";
+    els.refreshIndicatorDot.className = "indicator-dot inactive";
+
+    loadMovementsData();
   } else {
     // default/queues view
     els.queuesViewport.classList.remove("hidden");
@@ -1850,6 +1875,111 @@ function handleSearchableSelectClickOutside(e) {
       els.vehicleCooperado.value = "";
     }
   }
+}
+
+// ==========================================
+// MOVEMENTS TIMELINE FUNCTIONS
+// ==========================================
+
+async function loadMovementsData() {
+  els.movementsTimelineContainer.innerHTML = `
+    <div style="text-align: center; padding: 3rem;">
+      <div class="spinner" style="margin: 0 auto 10px auto; border-top-color: var(--accent);"></div>
+      <div>Carregando histórico de movimentações...</div>
+    </div>
+  `;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("vw_last_movimentos")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    renderMovementsTimeline(data || []);
+  } catch (err) {
+    console.error("Erro ao obter dados de movimentações:", err);
+    Toast.show("Erro ao carregar", err.message || "Tente novamente mais tarde.", "error");
+    els.movementsTimelineContainer.innerHTML = `
+      <div style="text-align: center; padding: 3rem; color: var(--danger);">
+        <i data-lucide="alert-triangle" style="width: 32px; height: 32px; margin-bottom: 10px; display: inline-block;"></i>
+        <div>Erro ao carregar movimentações do banco de dados.</div>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+}
+
+function renderMovementsTimeline(data) {
+  const container = els.movementsTimelineContainer;
+  container.innerHTML = "";
+
+  if (data.length === 0) {
+    container.innerHTML = `
+      <div class="empty-queue" style="width: 100%; height: 250px;">
+        <i data-lucide="history"></i>
+        <div class="empty-queue-text">Nenhuma movimentação registrada recentemente.</div>
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  const timeline = document.createElement("div");
+  timeline.className = "timeline-container";
+
+  data.forEach(item => {
+    const isProgramado = item.tipo === "programado";
+    const typeClass = isProgramado ? "programado" : "retirada";
+    const badgeIcon = isProgramado ? "calendar" : "truck";
+    const actionLabel = isProgramado ? "Programado" : "Retirada";
+    const locationName = item.none || item.nome || "Fila não identificada";
+
+    const itemEl = document.createElement("div");
+    itemEl.className = "timeline-item";
+
+    itemEl.innerHTML = `
+      <div class="timeline-badge ${typeClass}">
+        <i data-lucide="${badgeIcon}"></i>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-header">
+          <div class="timeline-title-area">
+            <span class="timeline-action ${typeClass}">${actionLabel}</span>
+            ${renderPlateBadge(item.placa)}
+          </div>
+          <span class="timeline-date">${formatDateTime(item.created_at)}</span>
+        </div>
+        <div class="timeline-body">
+          ${item.motivo || "Movimentação registrada"}
+        </div>
+        <div class="timeline-details">
+          <div class="timeline-detail-item">
+            <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+            <span>${locationName}</span>
+          </div>
+          ${item.carga ? `
+            <div class="timeline-detail-item">
+              <i data-lucide="package" style="width: 12px; height: 12px;"></i>
+              <span>Carga: ${item.carga}</span>
+            </div>
+          ` : ""}
+          ${item.idRef ? `
+            <div class="timeline-detail-item">
+              <i data-lucide="hash" style="width: 12px; height: 12px;"></i>
+              <span>ID Ref: ${item.idRef}</span>
+            </div>
+          ` : ""}
+        </div>
+      </div>
+    `;
+    timeline.appendChild(itemEl);
+  });
+
+  container.appendChild(timeline);
+  lucide.createIcons();
 }
 
 
