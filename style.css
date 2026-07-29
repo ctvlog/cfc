@@ -817,7 +817,7 @@ body {
 
 .plate-badge-main {
   font-size: 0.8rem;
-  padding: 4px 6px;
+  padding: 4px 4px;
   background: var(--accent-bg-glow);
   border: 1px solid var(--border-color);
   color: var(--accent);
