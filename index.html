@@ -6,7 +6,7 @@
   <title>Central de Fretes Cootravale</title>
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.0.2">
+  <link rel="stylesheet" href="style.css?v=1.0.5">
   
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -89,6 +89,10 @@
             <button class="nav-item" id="nav-btn-cooperados">
               <i data-lucide="users"></i>
               <span>Gestão de Cooperados</span>
+            </button>
+            <button class="nav-item" id="nav-btn-access">
+              <i data-lucide="shield-check"></i>
+              <span>Controle de Acessos</span>
             </button>
           </div>
         </div>
@@ -223,22 +227,105 @@
       </section>
 
       <!-- CRUD Vehicles Viewport (Initially Hidden) -->
+      <!-- CRUD Vehicles Viewport (Initially Hidden) -->
       <section class="crud-container hidden" id="vehicles-crud-section">
         <div class="crud-header">
           <div class="crud-title-area">
             <h2 class="crud-title">Cadastro de Veículos</h2>
             <span class="crud-subtitle">Gerenciamento de veículos da central de fretes</span>
           </div>
-          <button class="btn btn-sm" id="btn-new-vehicle" style="width: auto;">
-            <i data-lucide="plus"></i>
-            <span>Novo Veículo</span>
-          </button>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-vehicles" style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+              <span>Recarregar</span>
+            </button>
+            <button class="btn btn-sm" id="btn-new-vehicle" style="width: auto; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+              <span>Novo Veículo</span>
+            </button>
+          </div>
         </div>
 
-        <div class="crud-toolbar">
+        <!-- Quick Summary Metrics Bar for Vehicles -->
+        <div class="access-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue"><i data-lucide="truck"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-vehicles-total">0</span>
+              <span class="metric-label">Total de Veículos</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon green"><i data-lucide="shield-check"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-vehicles-frota">0</span>
+              <span class="metric-label">Frota Própria</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon orange"><i data-lucide="user"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-vehicles-terceiro">0</span>
+              <span class="metric-label">Terceiros</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="layers"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-vehicles-tipos">0</span>
+              <span class="metric-label">Tipos Ativos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters & Toolbar for Vehicles -->
+        <div class="crud-toolbar access-toolbar">
           <div class="crud-search-wrapper">
             <i data-lucide="search" class="filter-icon"></i>
             <input type="text" id="crud-search-input" class="filter-input" placeholder="Buscar placa ou cooperado...">
+          </div>
+
+          <div class="access-filters-group">
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-vehicles-type-filter">Tipo:</label>
+              <select id="crud-vehicles-type-filter" class="filter-select">
+                <option value="all">Todos os Tipos</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-vehicles-frota-filter">Vínculo:</label>
+              <select id="crud-vehicles-frota-filter" class="filter-select">
+                <option value="all">Todos</option>
+                <option value="true">Frota</option>
+                <option value="false">Terceiro</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-vehicles-sort-select">Ordenar:</label>
+              <select id="crud-vehicles-sort-select" class="filter-select">
+                <option value="created_at_desc">Mais Recentes</option>
+                <option value="created_at_asc">Mais Antigos</option>
+                <option value="placa_asc">Placa (A - Z)</option>
+                <option value="placa_desc">Placa (Z - A)</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-vehicles-pagesize-select">Exibir:</label>
+              <select id="crud-vehicles-pagesize-select" class="filter-select">
+                <option value="20">20 / pág</option>
+                <option value="30" selected>30 / pág</option>
+                <option value="50">50 / pág</option>
+                <option value="100">100 / pág</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-vehicles-filters" title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+              <span>Limpar</span>
+            </button>
           </div>
         </div>
 
@@ -260,15 +347,21 @@
             </tbody>
           </table>
           
-          <!-- Pagination controls for Vehicles -->
-          <div class="pagination-controls">
-            <span class="pagination-info" id="vehicles-pagination-info">Página 1</span>
+          <!-- Enhanced Pagination controls for Vehicles -->
+          <div class="pagination-controls access-pagination">
+            <span class="pagination-info" id="vehicles-pagination-info">Carregando paginação...</span>
             <div class="pagination-buttons">
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-vehicles-page" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-vehicles-page" title="Primeira Página" disabled>
+                <i data-lucide="chevrons-left"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-vehicles-page" title="Página Anterior" disabled>
                 <i data-lucide="chevron-left"></i> Anterior
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-vehicles-page" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-vehicles-page" title="Próxima Página" disabled>
                 Próximo <i data-lucide="chevron-right"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-vehicles-page" title="Última Página" disabled>
+                <i data-lucide="chevrons-right"></i>
               </button>
             </div>
           </div>
@@ -282,16 +375,98 @@
             <h2 class="crud-title">Cadastro de Cooperados</h2>
             <span class="crud-subtitle">Gerenciamento de cooperados e seus contatos</span>
           </div>
-          <button class="btn btn-sm" id="btn-new-cooperado" style="width: auto;">
-            <i data-lucide="plus"></i>
-            <span>Novo Cooperado</span>
-          </button>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-cooperados" style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+              <span>Recarregar</span>
+            </button>
+            <button class="btn btn-sm" id="btn-new-cooperado" style="width: auto; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+              <span>Novo Cooperado</span>
+            </button>
+          </div>
         </div>
 
-        <div class="crud-toolbar">
+        <!-- Quick Summary Metrics Bar for Cooperados -->
+        <div class="access-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue"><i data-lucide="users"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-coop-total">0</span>
+              <span class="metric-label">Total de Cooperados</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon green"><i data-lucide="check-circle-2"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-coop-active">0</span>
+              <span class="metric-label">Ativos</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon orange"><i data-lucide="x-circle"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-coop-inactive">0</span>
+              <span class="metric-label">Inativos</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="phone"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-coop-with-contacts">0</span>
+              <span class="metric-label">Com Contatos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters & Toolbar for Cooperados -->
+        <div class="crud-toolbar access-toolbar">
           <div class="crud-search-wrapper">
             <i data-lucide="search" class="filter-icon"></i>
             <input type="text" id="crud-cooperados-search-input" class="filter-input" placeholder="Buscar por nome ou contato...">
+          </div>
+
+          <div class="access-filters-group">
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-cooperados-status-filter">Status:</label>
+              <select id="crud-cooperados-status-filter" class="filter-select">
+                <option value="all">Todos os Status</option>
+                <option value="ativo" selected>Ativos</option>
+                <option value="inativo">Inativos</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-cooperados-contacts-filter">Contatos:</label>
+              <select id="crud-cooperados-contacts-filter" class="filter-select">
+                <option value="all">Todos</option>
+                <option value="with_contacts">Com Contato</option>
+                <option value="without_contacts">Sem Contato</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-cooperados-sort-select">Ordenar:</label>
+              <select id="crud-cooperados-sort-select" class="filter-select">
+                <option value="nome_asc">Nome (A - Z)</option>
+                <option value="nome_desc">Nome (Z - A)</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-cooperados-pagesize-select">Exibir:</label>
+              <select id="crud-cooperados-pagesize-select" class="filter-select">
+                <option value="20">20 / pág</option>
+                <option value="30" selected>30 / pág</option>
+                <option value="50">50 / pág</option>
+                <option value="100">100 / pág</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-cooperados-filters" title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+              <span>Limpar</span>
+            </button>
           </div>
         </div>
 
@@ -301,6 +476,7 @@
               <tr>
                 <th>Nome</th>
                 <th>IDs de Contato (idContatos)</th>
+                <th style="width: 120px; text-align: center;">Status</th>
                 <th style="width: 150px; text-align: center;">Ações</th>
               </tr>
             </thead>
@@ -309,15 +485,166 @@
             </tbody>
           </table>
           
-          <!-- Pagination controls for Cooperados -->
-          <div class="pagination-controls">
-            <span class="pagination-info" id="cooperados-pagination-info">Página 1</span>
+          <!-- Enhanced Pagination controls for Cooperados -->
+          <div class="pagination-controls access-pagination">
+            <span class="pagination-info" id="cooperados-pagination-info">Carregando paginação...</span>
             <div class="pagination-buttons">
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-cooperados-page" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-cooperados-page" title="Primeira Página" disabled>
+                <i data-lucide="chevrons-left"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-cooperados-page" title="Página Anterior" disabled>
                 <i data-lucide="chevron-left"></i> Anterior
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-cooperados-page" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-cooperados-page" title="Próxima Página" disabled>
                 Próximo <i data-lucide="chevron-right"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-cooperados-page" title="Última Página" disabled>
+                <i data-lucide="chevrons-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CRUD Controle de Acessos (id_digisac) Viewport (Initially Hidden) -->
+      <section class="crud-container hidden" id="access-crud-section">
+        <div class="crud-header">
+          <div class="crud-title-area">
+            <h2 class="crud-title">Controle de Acessos</h2>
+            <span class="crud-subtitle">Gerenciamento de contatos, permissões e aprovações (Digisac)</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-access" style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+              <span>Recarregar</span>
+            </button>
+            <button class="btn btn-sm" id="btn-new-access" style="width: auto; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+              <span>Novo Acesso</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Summary Metrics Bar -->
+        <div class="access-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue"><i data-lucide="users"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-access-total">0</span>
+              <span class="metric-label">Total de Registros</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon green"><i data-lucide="check-circle-2"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-access-approved">0</span>
+              <span class="metric-label">Aprovados</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon orange"><i data-lucide="clock"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-access-pending">0</span>
+              <span class="metric-label">Pendentes / Não Aprovados</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="shield-check"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-access-active">0</span>
+              <span class="metric-label">Status Ativo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters & Toolbar -->
+        <div class="crud-toolbar access-toolbar">
+          <div class="crud-search-wrapper">
+            <i data-lucide="search" class="filter-icon"></i>
+            <input type="text" id="crud-access-search-input" class="filter-input" placeholder="Buscar por nome ou número...">
+          </div>
+
+          <div class="access-filters-group">
+            <div class="filter-item">
+              <label class="filter-label-inline" for="access-status-filter">Status:</label>
+              <select id="access-status-filter" class="filter-select">
+                <option value="all">Todos os Status</option>
+                <option value="true">Ativo</option>
+                <option value="false">Inativo</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="access-approved-filter">Aprovação:</label>
+              <select id="access-approved-filter" class="filter-select">
+                <option value="all">Todas as Aprovações</option>
+                <option value="true">Aprovado</option>
+                <option value="false">Não Aprovado / Pendente</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="access-sort-select">Ordenar:</label>
+              <select id="access-sort-select" class="filter-select">
+                <option value="created_at_desc">Mais Recentes</option>
+                <option value="created_at_asc">Mais Antigos</option>
+                <option value="nome_asc">Nome (A - Z)</option>
+                <option value="nome_desc">Nome (Z - A)</option>
+                <option value="numero_asc">Número (0 - 9)</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="access-pagesize-select">Exibir:</label>
+              <select id="access-pagesize-select" class="filter-select">
+                <option value="20">20 / pág</option>
+                <option value="30" selected>30 / pág</option>
+                <option value="50">50 / pág</option>
+                <option value="100">100 / pág</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-access-filters" title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Wrapper -->
+        <div class="crud-table-wrapper">
+          <table class="crud-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Número / Identificador</th>
+                <th>Cooperados Vinculados</th>
+                <th style="width: 130px; text-align: center;">Status</th>
+                <th style="width: 150px; text-align: center;">Aprovação</th>
+                <th style="width: 150px;">Data de Cadastro</th>
+                <th style="width: 140px; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="crud-access-tbody">
+              <!-- Rendered dynamically by app.js -->
+            </tbody>
+          </table>
+
+          <!-- Enhanced Pagination Controls -->
+          <div class="pagination-controls access-pagination">
+            <span class="pagination-info" id="access-pagination-info">Carregando paginação...</span>
+            <div class="pagination-buttons">
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-access-page" title="Primeira Página" disabled>
+                <i data-lucide="chevrons-left"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-access-page" title="Página Anterior" disabled>
+                <i data-lucide="chevron-left"></i> Anterior
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-access-page" title="Próxima Página" disabled>
+                Próximo <i data-lucide="chevron-right"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-access-page" title="Última Página" disabled>
+                <i data-lucide="chevrons-right"></i>
               </button>
             </div>
           </div>
@@ -335,6 +662,14 @@
             <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
             <span>Recarregar</span>
           </button>
+        </div>
+
+        <div class="crud-toolbar">
+          <div class="filter-group" style="flex: 0 1 auto; min-width: 250px;">
+            <select id="movement-queue-filter" class="filter-select" style="width: 100%;">
+              <option value="">Filtrar por Fila (Todas)</option>
+            </select>
+          </div>
         </div>
 
         <div id="movements-timeline-container" style="overflow-y: auto; flex: 1; padding-right: 8px;">
@@ -469,7 +804,153 @@
     </div>
   </div>
 
+  <!-- ACCESS (ID_DIGISAC) FORM MODAL -->
+  <div class="modal-backdrop" id="access-modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="access-modal-title">Novo Acesso</h3>
+        <button class="modal-close" id="access-modal-close">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="access-form">
+          <input type="hidden" id="access-edit-mode" value="false">
+
+          <div class="form-group">
+            <label class="form-label" for="access-id">ID / UUID do Contato *</label>
+            <div style="display: flex; gap: 8px;">
+              <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.85rem;" type="text" id="access-id" placeholder="Ex: cbb379d2-be8d-4a55-a4ba-e9546469dd64" required pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" title="Formato UUID obrigatório: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-generate-uuid" title="Gerar novo UUID v4" style="white-space: nowrap; display: flex; align-items: center; gap: 4px; padding: 0 12px;">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                <span>Gerar UUID</span>
+              </button>
+            </div>
+            <span id="access-id-hint" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">
+              Insira o código UUID manualmente ou clique em "Gerar UUID"
+            </span>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label" for="access-nome">Nome *</label>
+            <input class="form-input" style="padding-left: 12px;" type="text" id="access-nome" placeholder="Nome completo do usuário ou motorista" required>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label" for="access-numero">Número / Contato Digisac</label>
+            <input class="form-input" style="padding-left: 12px;" type="text" id="access-numero" placeholder="Ex: 5547999999999 ou (47) 99999-9999">
+            <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">
+              Identificador telefônico ou ID do contato no Digisac
+            </span>
+          </div>
+
+          <div class="form-row" style="margin-top: 1.25rem;">
+            <div class="form-group">
+              <label class="form-label" for="access-status">Status *</label>
+              <select class="form-input" id="access-status" required>
+                <option value="true">Ativo</option>
+                <option value="false">Inativo</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="access-aprovado">Aprovação *</label>
+              <select class="form-input" id="access-aprovado" required>
+                <option value="true">Aprovado</option>
+                <option value="false">Não Aprovado / Pendente</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-access" style="width: auto;">Cancelar</button>
+            <button type="submit" class="btn btn-sm" id="btn-save-access" style="width: auto;">Salvar Acesso</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL VÍNCULO DE COOPERADOS -->
+  <div class="modal-backdrop" id="link-cooperados-modal-backdrop">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="logo-icon" style="width: 38px; height: 38px; border-radius: 8px;">
+            <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title">Vínculo de Cooperados</h3>
+            <span class="crud-subtitle" id="link-cooperados-contact-info">Gerenciando perfil do contato</span>
+          </div>
+        </div>
+        <button class="modal-close" id="link-cooperados-modal-close" type="button">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+        
+        <!-- Search & Add Section -->
+        <div style="background: rgba(0, 0, 0, 0.15); border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem;">
+          <label class="form-label" style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="user-plus" style="width: 14px; height: 14px; color: var(--accent);"></i>
+            <span>Adicionar Cooperado à Lista</span>
+          </label>
+          
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <div class="searchable-select-wrapper" style="flex: 1;">
+              <input type="text" id="link-cooperado-search-input" class="form-input" style="padding-left: 12px;" placeholder="Digite para buscar cooperado disponível..." autocomplete="off">
+              <input type="hidden" id="link-cooperado-selected-id">
+              <div class="searchable-select-dropdown" id="link-cooperado-dropdown"></div>
+            </div>
+            <button type="button" class="btn btn-sm" id="btn-add-cooperado-link" style="padding: 10px 16px; width: auto; white-space: nowrap; display: flex; align-items: center; gap: 6px;" disabled>
+              <i data-lucide="plus" style="width: 15px; height: 15px;"></i>
+              <span>Adicionar</span>
+            </button>
+          </div>
+          <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: block;">
+            Pesquise pelo nome do cooperado cadastrado e clique em Adicionar.
+          </span>
+        </div>
+
+        <!-- Currently Linked Cooperados Section -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="check-circle-2" style="width: 15px; height: 15px; color: var(--accent);"></i>
+              <span>Cooperados Vinculados</span>
+            </h4>
+            <span class="badge-status active" id="link-cooperados-count-badge" style="cursor: default;">0 selecionados</span>
+          </div>
+
+          <!-- Linked list container -->
+          <div id="link-cooperados-list-container" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div style="margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-all-cooperado-links" style="width: auto; color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">
+            <i data-lucide="trash" style="width: 13px; height: 13px;"></i>
+            <span>Desvincular Todos</span>
+          </button>
+          
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-link-cooperados" style="width: auto;">Cancelar</button>
+            <button type="button" class="btn btn-sm" id="btn-save-link-cooperados" style="width: auto; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="save" style="width: 14px; height: 14px;"></i>
+              <span>Salvar Vínculos</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- Main JavaScript File -->
-  <script src="app.js?v=1.0.2"></script>
+  <script src="app.js?v=1.0.8"></script>
 </body>
 </html>

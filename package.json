@@ -4,7 +4,8 @@
   "description": "Painel de Visualização e Gestão de Filas - Central de Fretes Cootravale",
   "main": "index.html",
   "scripts": {
-    "dev": "npx http-server -p 3000"
+    "dev": "python -m http.server 3000",
+    "serve": "python -m http.server 3000"
   },
   "keywords": [],
   "author": "",
