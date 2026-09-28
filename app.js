@@ -144,6 +144,7 @@ const els = {
   vehicleId: document.getElementById("vehicle-id"),
   cooperadoId: document.getElementById("cooperado-id"),
   vehiclePlaca: document.getElementById("vehicle-placa"),
+  cooperadoCodigo: document.getElementById("cooperado-codigo"),
   cooperadoNome: document.getElementById("cooperado-nome"),
   vehiclePlaca2: document.getElementById("vehicle-placa2"),
   cooperadoContactInput: document.getElementById("cooperado-contact-input"),
@@ -198,6 +199,7 @@ const els = {
   navBtnAccess: document.getElementById("nav-btn-access"),
   accessCrudSection: document.getElementById("access-crud-section"),
   btnRefreshAccess: document.getElementById("btn-refresh-access"),
+  btnSyncAccess: document.getElementById("btn-sync-access"),
   btnNewAccess: document.getElementById("btn-new-access"),
   statAccessTotal: document.getElementById("stat-access-total"),
   statAccessApproved: document.getElementById("stat-access-approved"),
@@ -731,6 +733,7 @@ function setupEventListeners() {
   // Access Control Navigation & CRUD
   els.navBtnAccess.addEventListener("click", () => switchView("access"));
   els.btnRefreshAccess.addEventListener("click", () => loadAccessData(true));
+  if (els.btnSyncAccess) els.btnSyncAccess.addEventListener("click", triggerAccessSync);
   els.btnNewAccess.addEventListener("click", () => openAccessModal());
   els.accessModalClose.addEventListener("click", closeAccessModal);
   els.btnCancelAccess.addEventListener("click", closeAccessModal);
@@ -1359,10 +1362,10 @@ function switchView(view) {
 
 async function loadAdminAuxiliaryData() {
   try {
-    // Fetch Cooperados (selecting status and idContatos)
+    // Fetch Cooperados (selecting status, idContatos, and codigo)
     const { data: cooperadosData, error: coopError } = await supabaseClient
       .from("cooperado")
-      .select("id, nome, status, idContatos")
+      .select("id, nome, status, idContatos, codigo")
       .order("nome");
 
     if (coopError) throw coopError;
@@ -1409,7 +1412,8 @@ function populateModalDropdowns() {
 function getCooperadoName(cooperadoId) {
   if (!cooperadoId) return "Não associado";
   const coop = appState.cooperados.find(c => c.id === cooperadoId);
-  return coop ? coop.nome : "Carregando...";
+  if (!coop) return "Carregando...";
+  return coop.codigo ? `${coop.nome} (${coop.codigo})` : coop.nome;
 }
 
 async function loadVehiclesData(fetchStats = false) {
@@ -1439,11 +1443,11 @@ async function loadVehiclesData(fetchStats = false) {
 
     // Search filter
     if (search) {
-      // Find matching cooperados to search by owner name (limit to 20 to avoid large URL query string)
+      // Find matching cooperados to search by owner name or code (limit to 20 to avoid large URL query string)
       const { data: coops } = await supabaseClient
         .from("cooperado")
         .select("id")
-        .ilike("nome", `%${search}%`)
+        .or(`nome.ilike.%${search}%,codigo.ilike.%${search}%`)
         .limit(20);
       
       const coopIds = coops && coops.length > 0 ? coops.map(c => c.id) : [];
@@ -1790,7 +1794,7 @@ async function deleteVehicle(id) {
 async function loadCooperadosData(fetchStats = false) {
   els.crudCooperadosTbody.innerHTML = `
     <tr>
-      <td colspan="4" style="text-align: center; padding: 2.5rem;">
+      <td colspan="5" style="text-align: center; padding: 2.5rem;">
         <div class="spinner" style="margin: 0 auto 10px auto; border-top-color: var(--accent);"></div>
         <span style="color: var(--text-muted); font-size: 0.85rem;">Carregando cooperados...</span>
       </td>
@@ -1818,13 +1822,13 @@ async function loadCooperadosData(fetchStats = false) {
       query = query.eq("status", "inativo");
     }
 
-    // Search filter
+    // Search filter (name, code, or contacts)
     if (search) {
       const cleanSearch = search.replace(/[^A-Za-z0-9]/g, "");
       if (cleanSearch && cleanSearch.length >= 3) {
-        query = query.or(`nome.ilike.%${search}%,idContatos.cs.{"${cleanSearch}"}`);
+        query = query.or(`nome.ilike.%${search}%,codigo.ilike.%${search}%,idContatos.cs.{"${cleanSearch}"}`);
       } else {
-        query = query.ilike("nome", `%${search}%`);
+        query = query.or(`nome.ilike.%${search}%,codigo.ilike.%${search}%`);
       }
     }
 
@@ -1840,6 +1844,12 @@ async function loadCooperadosData(fetchStats = false) {
       case "nome_desc":
         query = query.order("nome", { ascending: false, nullsFirst: false });
         break;
+      case "codigo_asc":
+        query = query.order("codigo", { ascending: true, nullsFirst: false });
+        break;
+      case "codigo_desc":
+        query = query.order("codigo", { ascending: false, nullsFirst: false });
+        break;
       case "created_at_desc":
         query = query.order("created_at", { ascending: false, nullsFirst: false });
         break;
@@ -1851,17 +1861,20 @@ async function loadCooperadosData(fetchStats = false) {
 
     const { data, count, error } = await query.range(from, to);
     if (error) {
-      // Fallback to name search if array query failed
+      // Fallback to name or code search if array query failed
       if (search) {
         let fallbackQuery = supabaseClient
           .from("cooperado")
           .select("*", { count: "exact" })
-          .ilike("nome", `%${search}%`);
+          .or(`nome.ilike.%${search}%,codigo.ilike.%${search}%`);
 
         if (statusFilter === "ativo") fallbackQuery = fallbackQuery.or("status.is.null,status.neq.inativo");
         else if (statusFilter === "inativo") fallbackQuery = fallbackQuery.eq("status", "inativo");
 
-        fallbackQuery = fallbackQuery.order("nome", { ascending: sort !== "nome_desc" });
+        if (sort === "codigo_asc") fallbackQuery = fallbackQuery.order("codigo", { ascending: true, nullsFirst: false });
+        else if (sort === "codigo_desc") fallbackQuery = fallbackQuery.order("codigo", { ascending: false, nullsFirst: false });
+        else fallbackQuery = fallbackQuery.order("nome", { ascending: sort !== "nome_desc" });
+
         const retryResult = await fallbackQuery.range(from, to);
         if (retryResult.error) throw retryResult.error;
 
@@ -1891,7 +1904,7 @@ async function loadCooperadosData(fetchStats = false) {
     Toast.show("Erro ao carregar cooperados", err.message || "Tente novamente mais tarde.", "error");
     els.crudCooperadosTbody.innerHTML = `
       <tr>
-        <td colspan="4" style="text-align: center; padding: 2rem; color: var(--danger);">
+        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--danger);">
           Erro ao obter lista de cooperados: ${err.message || "Erro desconhecido"}
         </td>
       </tr>
@@ -1907,7 +1920,7 @@ function renderCooperadosTable() {
   if (filtered.length === 0) {
     els.crudCooperadosTbody.innerHTML = `
       <tr>
-        <td colspan="4" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+        <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
           Nenhum cooperado cadastrado ou correspondente aos filtros.
         </td>
       </tr>
@@ -1917,6 +1930,26 @@ function renderCooperadosTable() {
 
   filtered.forEach(c => {
     const row = document.createElement("tr");
+
+    // Código
+    const tdCodigo = document.createElement("td");
+    if (c.codigo) {
+      const codeBadge = document.createElement("span");
+      codeBadge.className = "badge-status";
+      codeBadge.style.fontFamily = "monospace";
+      codeBadge.style.fontSize = "0.82rem";
+      codeBadge.style.fontWeight = "600";
+      codeBadge.style.background = "rgba(82, 160, 125, 0.12)";
+      codeBadge.style.color = "var(--accent)";
+      codeBadge.style.border = "1px solid rgba(82, 160, 125, 0.25)";
+      codeBadge.style.padding = "2px 8px";
+      codeBadge.style.borderRadius = "4px";
+      codeBadge.textContent = c.codigo;
+      tdCodigo.appendChild(codeBadge);
+    } else {
+      tdCodigo.innerHTML = '<span style="color:var(--text-muted); opacity:0.4;">-</span>';
+    }
+    row.appendChild(tdCodigo);
 
     // Nome
     const tdNome = document.createElement("td");
@@ -1992,11 +2025,13 @@ function renderCooperadosTable() {
 function openCooperadoModal(cooperado = null) {
   els.cooperadoForm.reset();
   els.cooperadoId.value = "";
+  if (els.cooperadoCodigo) els.cooperadoCodigo.value = "";
   appState.cooperadoFormContacts = [];
 
   if (cooperado) {
     els.cooperadoModalTitle.textContent = "Editar Cooperado";
     els.cooperadoId.value = cooperado.id;
+    if (els.cooperadoCodigo) els.cooperadoCodigo.value = cooperado.codigo || "";
     els.cooperadoNome.value = cooperado.nome || "";
 
     if (cooperado.idContatos && Array.isArray(cooperado.idContatos)) {
@@ -2014,6 +2049,7 @@ function closeCooperadoModal() {
   els.cooperadoModalBackdrop.classList.remove("show");
   els.cooperadoForm.reset();
   els.cooperadoId.value = "";
+  if (els.cooperadoCodigo) els.cooperadoCodigo.value = "";
   appState.cooperadoFormContacts = [];
 }
 
@@ -2076,6 +2112,7 @@ async function handleCooperadoFormSubmit(e) {
   e.preventDefault();
 
   const id = els.cooperadoId.value;
+  const codigo = els.cooperadoCodigo ? (els.cooperadoCodigo.value.trim() || null) : null;
   const nome = els.cooperadoNome.value.trim();
   const idContatos = appState.cooperadoFormContacts;
 
@@ -2091,6 +2128,7 @@ async function handleCooperadoFormSubmit(e) {
 
   const payload = {
     nome,
+    codigo,
     idContatos,
     status: 'ativo'
   };
@@ -2720,6 +2758,49 @@ async function toggleAccessApproved(id, currentApproved, nome) {
   }
 }
 
+async function triggerAccessSync() {
+  const syncBtn = els.btnSyncAccess;
+  if (!syncBtn) return;
+
+  const originalHtml = syncBtn.innerHTML;
+  syncBtn.disabled = true;
+  syncBtn.innerHTML = `<div class="spinner"></div><span>Sincronizando...</span>`;
+
+  const webhookUrl = "https://n8n.srv1999707.hstgr.cloud/webhook/0c800df8-d44a-4ac3-9cf6-5e67e5ca4eaa";
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "GET"
+    });
+
+    if (!response.ok) {
+      throw new Error(`Servidor retornou status ${response.status} (${response.statusText})`);
+    }
+
+    Toast.show(
+      "Sincronização Iniciada",
+      "O webhook de sincronização foi acionado com sucesso no n8n. Atualizando lista...",
+      "success"
+    );
+
+    // Refresh access table and stats after slight delay to allow processing
+    setTimeout(() => {
+      loadAccessData(true);
+    }, 2500);
+  } catch (err) {
+    console.error("Erro ao acionar webhook de sincronização:", err);
+    Toast.show(
+      "Erro na Sincronização",
+      err.message || "Não foi possível acionar o webhook de sincronização.",
+      "error"
+    );
+  } finally {
+    syncBtn.disabled = false;
+    syncBtn.innerHTML = originalHtml;
+    lucide.createIcons();
+  }
+}
+
 // ==========================================
 // VÍNCULO DE COOPERADOS MODAL & SYSTEM
 // ==========================================
@@ -2804,7 +2885,7 @@ function renderLinkedCooperadosList() {
 
   ids.forEach(coopId => {
     const coop = appState.cooperados.find(c => c.id === coopId);
-    const coopNome = coop ? coop.nome : `Cooperado (${coopId.substring(0, 8)}...)`;
+    const coopNome = coop ? (coop.codigo ? `${coop.nome} (${coop.codigo})` : coop.nome) : `Cooperado (${coopId.substring(0, 8)}...)`;
     const coopStatus = coop ? (coop.status || "ativo") : "desconhecido";
 
     const itemEl = document.createElement("div");
@@ -2851,7 +2932,7 @@ function filterLinkCooperadosDropdown() {
   const available = (appState.cooperados || []).filter(c => !staged.has(c.id));
 
   const filtered = query
-    ? available.filter(c => c.nome && c.nome.toLowerCase().includes(query))
+    ? available.filter(c => (c.nome && c.nome.toLowerCase().includes(query)) || (c.codigo && c.codigo.toLowerCase().includes(query)))
     : available;
 
   renderLinkCooperadosDropdown(filtered);
@@ -2875,8 +2956,10 @@ function renderLinkCooperadosDropdown(list) {
     div.style.alignItems = "center";
     div.style.justifyContent = "space-between";
 
+    const displayName = c.codigo ? `${c.nome} (${c.codigo})` : c.nome;
+
     const nameSpan = document.createElement("span");
-    nameSpan.textContent = c.nome;
+    nameSpan.textContent = displayName;
 
     const statusBadge = document.createElement("span");
     statusBadge.className = `linked-coop-status ${c.status === 'ativo' ? 'ativo' : 'inativo'}`;
@@ -2886,7 +2969,7 @@ function renderLinkCooperadosDropdown(list) {
     div.appendChild(statusBadge);
 
     div.addEventListener("click", () => {
-      selectCooperadoForLink(c.id, c.nome);
+      selectCooperadoForLink(c.id, displayName);
     });
 
     els.linkCooperadoDropdown.appendChild(div);
@@ -3215,7 +3298,9 @@ function filterCooperadosDropdown() {
   const activeCoops = appState.cooperados.filter(c => c.status !== 'inativo');
 
   const filtered = activeCoops.filter(c => {
-    return c.nome && c.nome.toLowerCase().includes(query);
+    const matchNome = c.nome && c.nome.toLowerCase().includes(query);
+    const matchCodigo = c.codigo && c.codigo.toLowerCase().includes(query);
+    return matchNome || matchCodigo;
   });
 
   renderCooperadosDropdown(filtered);
@@ -3233,9 +3318,10 @@ function renderCooperadosDropdown(list) {
   list.slice(0, 50).forEach(c => {
     const div = document.createElement("div");
     div.className = "searchable-select-item";
-    div.textContent = c.nome;
+    const displayName = c.codigo ? `${c.nome} (${c.codigo})` : c.nome;
+    div.textContent = displayName;
     div.addEventListener("click", () => {
-      selectCooperadoCombobox(c.id, c.nome);
+      selectCooperadoCombobox(c.id, displayName);
     });
     els.vehicleCooperadoDropdown.appendChild(div);
   });
