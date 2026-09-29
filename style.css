@@ -489,6 +489,54 @@ body {
   color: white;
 }
 
+.user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-change-pw {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-change-pw:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+.login-form-options {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -6px;
+  margin-bottom: 1.25rem;
+}
+
+.auth-link {
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.auth-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 /* Main Dashboard Area */
 .main-content {
   flex: 1;

@@ -47,6 +47,10 @@
           </div>
         </div>
         
+        <div class="login-form-options">
+          <a href="reset-password.html" class="auth-link" title="Redefinir senha ou ativar cadastro com convite">Esqueceu a senha ou primeiro acesso?</a>
+        </div>
+        
         <button type="submit" id="login-btn" class="btn">
           <span>Entrar</span>
         </button>
@@ -153,10 +157,16 @@
             <div class="user-role">Operador</div>
           </div>
         </div>
-        <button class="btn btn-logout" id="logout-btn">
-          <i data-lucide="log-out" style="width:16px; height:16px;"></i>
-          <span>Encerrar Sessão</span>
-        </button>
+        <div class="user-actions">
+          <a href="reset-password.html" class="btn-change-pw" id="btn-change-pw" title="Alterar sua senha de acesso">
+            <i data-lucide="key-round" style="width:14px; height:14px;"></i>
+            <span>Alterar Senha</span>
+          </a>
+          <button class="btn btn-logout" id="logout-btn">
+            <i data-lucide="log-out" style="width:16px; height:16px;"></i>
+            <span>Encerrar Sessão</span>
+          </button>
+        </div>
       </div>
     </aside>
 
