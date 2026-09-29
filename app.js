@@ -226,6 +226,7 @@ const els = {
   accessIdHint: document.getElementById("access-id-hint"),
   btnGenerateUuid: document.getElementById("btn-generate-uuid"),
   accessNome: document.getElementById("access-nome"),
+  accessEmpresa: document.getElementById("access-empresa"),
   accessNumero: document.getElementById("access-numero"),
   accessStatus: document.getElementById("access-status"),
   accessAprovado: document.getElementById("access-aprovado"),
@@ -2230,7 +2231,7 @@ async function loadAccessData(fetchStats = false) {
 
     // Apply Search
     if (search) {
-      query = query.or(`nome.ilike.%${search}%,numero.ilike.%${search}%`);
+      query = query.or(`nome.ilike.%${search}%,numero.ilike.%${search}%,empresa.ilike.%${search}%`);
     }
 
     // Apply Status Filter
@@ -2257,6 +2258,12 @@ async function loadAccessData(fetchStats = false) {
         break;
       case "nome_desc":
         query = query.order("nome", { ascending: false, nullsFirst: false });
+        break;
+      case "empresa_asc":
+        query = query.order("empresa", { ascending: true, nullsFirst: false });
+        break;
+      case "empresa_desc":
+        query = query.order("empresa", { ascending: false, nullsFirst: false });
         break;
       case "numero_asc":
         query = query.order("numero", { ascending: true, nullsFirst: false });
@@ -2366,15 +2373,31 @@ function renderAccessTable() {
     nameSpan.className = "access-user-name";
     nameSpan.textContent = item.nome || "Não informado";
 
-    const idSpan = document.createElement("span");
-    idSpan.className = "access-user-id";
-    idSpan.textContent = item.id ? `ID: ${item.id.substring(0, 8)}...` : "";
+    const empresaSpan = document.createElement("span");
+    if (item.empresa && item.empresa.trim()) {
+      empresaSpan.className = "access-user-empresa";
+      empresaSpan.innerHTML = `
+        <i data-lucide="building-2"></i>
+        <span>${item.empresa.trim()}</span>
+      `;
+      empresaSpan.title = `Empresa: ${item.empresa.trim()}${item.id ? ` • ID: ${item.id}` : ""}`;
+    } else {
+      empresaSpan.className = "access-user-empresa empty";
+      empresaSpan.innerHTML = `
+        <i data-lucide="building-2"></i>
+        <span>Empresa não informada</span>
+      `;
+      empresaSpan.title = item.id ? `ID: ${item.id}` : "Empresa não informada";
+    }
 
     info.appendChild(nameSpan);
-    if (item.id) info.appendChild(idSpan);
+    info.appendChild(empresaSpan);
 
     userCell.appendChild(avatar);
     userCell.appendChild(info);
+    if (item.id) {
+      userCell.title = `ID: ${item.id}`;
+    }
     tdNome.appendChild(userCell);
     row.appendChild(tdNome);
 
@@ -2566,6 +2589,7 @@ function openAccessModal(item = null) {
     els.btnGenerateUuid.style.display = "none";
     if (els.accessIdHint) els.accessIdHint.textContent = "Chave primária UUID (somente leitura na edição)";
     els.accessNome.value = item.nome || "";
+    if (els.accessEmpresa) els.accessEmpresa.value = item.empresa || "";
     els.accessNumero.value = item.numero || "";
     els.accessStatus.value = item.status === true ? "true" : "false";
     els.accessAprovado.value = item.aprovado === true ? "true" : "false";
@@ -2578,6 +2602,9 @@ function openAccessModal(item = null) {
     els.accessId.style.cursor = "text";
     els.btnGenerateUuid.style.display = "flex";
     if (els.accessIdHint) els.accessIdHint.textContent = 'Insira o código UUID manualmente ou clique em "Gerar UUID"';
+    els.accessNome.value = "";
+    if (els.accessEmpresa) els.accessEmpresa.value = "";
+    els.accessNumero.value = "";
     els.accessStatus.value = "true";
     els.accessAprovado.value = "true";
     els.accessId.focus();
@@ -2590,6 +2617,7 @@ function closeAccessModal() {
   els.accessModalBackdrop.classList.remove("show");
   els.accessForm.reset();
   els.accessId.value = "";
+  if (els.accessEmpresa) els.accessEmpresa.value = "";
   els.accessEditMode.value = "false";
 }
 
@@ -2599,6 +2627,7 @@ async function handleAccessFormSubmit(e) {
   const isEdit = els.accessEditMode.value === "true";
   const id = els.accessId.value.trim().toLowerCase();
   const nome = els.accessNome.value.trim();
+  const empresa = els.accessEmpresa ? els.accessEmpresa.value.trim() || null : null;
   const numero = els.accessNumero.value.trim() || null;
   const status = els.accessStatus.value === "true";
   const aprovado = els.accessAprovado.value === "true";
@@ -2635,6 +2664,7 @@ async function handleAccessFormSubmit(e) {
         .from("id_digisac")
         .update({
           nome,
+          empresa,
           numero,
           status,
           aprovado
@@ -2646,6 +2676,7 @@ async function handleAccessFormSubmit(e) {
       const payload = {
         id,
         nome,
+        empresa,
         numero,
         status,
         aprovado
@@ -2823,8 +2854,9 @@ async function openLinkCooperadosModal(digisacId) {
   // Update header contact info
   if (els.linkCooperadosContactInfo) {
     const contactText = item.nome || "Sem nome";
+    const empresaText = item.empresa ? ` • ${item.empresa}` : "";
     const phoneText = item.numero ? ` (${item.numero})` : "";
-    els.linkCooperadosContactInfo.textContent = `Contato: ${contactText}${phoneText}`;
+    els.linkCooperadosContactInfo.textContent = `Contato: ${contactText}${empresaText}${phoneText}`;
   }
 
   // Reset search & combobox

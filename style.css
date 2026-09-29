@@ -1911,6 +1911,42 @@ body {
   opacity: 0.7;
 }
 
+.access-user-empresa {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-weight: 500;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.access-user-empresa i,
+.access-user-empresa svg {
+  width: 12px;
+  height: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.access-user-empresa.empty {
+  color: var(--text-muted);
+  opacity: 0.55;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.access-user-empresa.empty i,
+.access-user-empresa.empty svg {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
 /* Contact Number Badge */
 .contact-number-badge {
   display: inline-flex;
