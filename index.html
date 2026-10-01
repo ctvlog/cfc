@@ -82,6 +82,10 @@
               <i data-lucide="layout-grid"></i>
               <span>Filas de Carregamento</span>
             </button>
+            <a href="fila-mobile.html" class="nav-item" style="text-decoration: none;" title="Abrir painel otimizado para celular e smarthome">
+              <i data-lucide="smartphone"></i>
+              <span>Fila Mobile</span>
+            </a>
             <button class="nav-item" id="nav-btn-movements">
               <i data-lucide="history"></i>
               <span>Movimentações</span>
@@ -199,6 +203,11 @@
           <button class="btn-icon" id="btn-refresh" title="Recarregar Dados Agora">
             <i data-lucide="refresh-cw"></i>
           </button>
+
+          <!-- Mobile View Button -->
+          <a href="fila-mobile.html" class="btn-icon" id="btn-mobile-view" title="Abrir Painel de Fila Mobile / Smarthome" style="color: var(--accent); border-color: rgba(16, 185, 129, 0.3); background: var(--accent-bg-glow); text-decoration: none;">
+            <i data-lucide="smartphone"></i>
+          </a>
           
           <!-- Theme Toggle -->
           <button class="btn-icon" id="theme-toggle-btn" title="Alternar Modo Escuro / Claro">
@@ -228,6 +237,14 @@
             <option value="frota">Apenas Frota</option>
             <option value="terceiro">Apenas Terceiros</option>
           </select>
+        </div>
+
+        <!-- Button to Mobile View in Queue Panel -->
+        <div class="filter-group" style="flex: 0 0 auto; margin-left: auto;">
+          <a href="fila-mobile.html" class="btn btn-sm btn-secondary" id="btn-open-mobile-control" title="Acessar painel de fila otimizado para celular ou smarthome" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; height: 35px; padding: 0 12px; font-size: 0.82rem; font-weight: 600; border-color: var(--border-color); color: var(--text-primary); white-space: nowrap;">
+            <i data-lucide="smartphone" style="width: 15px; height: 15px; color: var(--accent);"></i>
+            <span>Painel Mobile</span>
+          </a>
         </div>
       </section>
       

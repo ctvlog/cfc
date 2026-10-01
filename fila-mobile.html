@@ -1,0 +1,2466 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#060c09">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Fila Mobile | Central de Fretes Cootravale</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* ==========================================================================
+       CSS VARIABLES & THEME TOKENS
+       ========================================================================== */
+    :root {
+      --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+      /* Dark Theme (Forest Obsidian Base - Cootravale Brand) */
+      --bg-base: #060c09;
+      --bg-surface: #0c1611;
+      --bg-surface-elevated: #112019;
+      --bg-surface-hover: #16281f;
+      --bg-input: #08120d;
+
+      --border-subtle: rgba(16, 185, 129, 0.12);
+      --border-medium: rgba(16, 185, 129, 0.25);
+      --border-highlight: rgba(16, 185, 129, 0.45);
+
+      --text-main: #f0fdf4;
+      --text-secondary: #9fe2bf;
+      --text-muted: #569376;
+
+      --accent: #10b981;
+      --accent-hover: #34d399;
+      --accent-glow: rgba(16, 185, 129, 0.15);
+      --accent-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --lead-gold-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      --lead-gold-border: rgba(245, 158, 11, 0.4);
+      --lead-gold-glow: rgba(245, 158, 11, 0.15);
+
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --danger-border: rgba(239, 68, 68, 0.3);
+
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+
+      --info: #38bdf8;
+      --info-bg: rgba(56, 189, 248, 0.12);
+
+      --glass-bg: rgba(12, 22, 17, 0.85);
+      --glass-blur: blur(16px);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.2);
+
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    [data-theme="light"] {
+      --bg-base: #f0f6f2;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f5faf7;
+      --bg-surface-hover: #eaf3ed;
+      --bg-input: #ffffff;
+
+      --border-subtle: rgba(5, 150, 105, 0.15);
+      --border-medium: rgba(5, 150, 105, 0.28);
+      --border-highlight: rgba(5, 150, 105, 0.5);
+
+      --text-main: #064e3b;
+      --text-secondary: #0d6e53;
+      --text-muted: #4e7a67;
+
+      --accent: #059669;
+      --accent-hover: #047857;
+      --accent-glow: rgba(5, 150, 105, 0.12);
+      --accent-gradient: linear-gradient(135deg, #059669 0%, #047857 100%);
+      --lead-gold-gradient: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      --lead-gold-border: rgba(217, 119, 6, 0.45);
+      --lead-gold-glow: rgba(217, 119, 6, 0.12);
+
+      --danger: #dc2626;
+      --danger-bg: rgba(220, 38, 38, 0.08);
+      --danger-border: rgba(220, 38, 38, 0.25);
+
+      --warning: #d97706;
+      --warning-bg: rgba(217, 119, 6, 0.1);
+
+      --info: #0284c7;
+      --info-bg: rgba(2, 132, 199, 0.1);
+
+      --glass-bg: rgba(255, 255, 255, 0.92);
+      --glass-blur: blur(12px);
+      --shadow-sm: 0 2px 8px rgba(6, 78, 59, 0.06);
+      --shadow-md: 0 6px 20px rgba(6, 78, 59, 0.08);
+      --shadow-glow: 0 0 20px rgba(5, 150, 105, 0.12);
+    }
+
+    /* ==========================================================================
+       RESET & BASE STYLES
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.45;
+      overflow-x: hidden;
+      overscroll-behavior-y: contain;
+    }
+
+    body {
+      padding-top: var(--safe-top);
+      padding-bottom: calc(75px + var(--safe-bottom));
+      display: flex;
+      flex-direction: column;
+    }
+
+    button, input, select {
+      font-family: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* Utilities */
+    .hidden {
+      display: none !important;
+    }
+
+    /* ==========================================================================
+       TOP APP BAR (STICKY HEADER)
+       ========================================================================== */
+    .mobile-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.65rem 1rem;
+      transition: all 0.25s ease;
+    }
+
+    .header-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--accent-gradient);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px var(--accent-glow);
+      flex-shrink: 0;
+    }
+
+    .brand-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .brand-text-col {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.2;
+    }
+
+    .brand-badge {
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--border-medium);
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .header-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .header-btn:active {
+      transform: scale(0.92);
+      background: var(--bg-surface-hover);
+    }
+
+    .header-btn.active {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .header-btn-desktop {
+      padding: 0 10px;
+      width: auto;
+      gap: 5px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      border-color: var(--border-medium);
+      background: var(--accent-glow);
+    }
+
+    /* Live Countdown Pill in Header */
+    .refresh-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 9px;
+      border-radius: 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 1.6s infinite ease-in-out;
+    }
+
+    .pulse-dot.paused {
+      background: var(--text-muted);
+      box-shadow: none;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinning {
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* ==========================================================================
+       METRICS STRIP (STAT CARDS)
+       ========================================================================== */
+    .metrics-section {
+      padding: 0.75rem 1rem 0.25rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 8px 6px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+
+    .metric-card:active {
+      transform: scale(0.97);
+    }
+
+    .metric-val {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--text-main);
+    }
+
+    .metric-lbl {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    .metric-card.accent .metric-val { color: var(--accent); }
+    .metric-card.blue .metric-val { color: var(--info); }
+    .metric-card.warning .metric-val { color: var(--warning); }
+    .metric-card.danger .metric-val { color: var(--danger); }
+
+    /* ==========================================================================
+       HORIZONTAL QUEUE SELECTOR TABS (SMARTHOME / MOBILE TAP PILLS)
+       ========================================================================== */
+    .queue-tabs-wrapper {
+      padding: 0.6rem 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      display: flex;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .queue-tabs-wrapper::-webkit-scrollbar {
+      display: none;
+    }
+
+    .queue-tab-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 24px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+    }
+
+    .queue-tab-pill:active {
+      transform: scale(0.95);
+    }
+
+    .queue-tab-pill.active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+      box-shadow: 0 3px 12px var(--accent-glow);
+    }
+
+    .queue-tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      background: rgba(0, 0, 0, 0.25);
+      color: inherit;
+    }
+
+    .queue-tab-pill:not(.active) .queue-tab-badge {
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+
+    /* ==========================================================================
+       SEARCH & CONTROLS TOOLBAR
+       ========================================================================== */
+    .controls-toolbar {
+      padding: 0.4rem 1rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .search-input-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-muted);
+      width: 16px;
+      height: 16px;
+      pointer-events: none;
+    }
+
+    .mobile-search-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 36px 0 36px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 0.88rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .mobile-search-input:focus {
+      border-color: var(--accent);
+      background: var(--bg-surface-elevated);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: none;
+      padding: 4px;
+    }
+
+    .search-clear-btn.visible {
+      display: flex;
+    }
+
+    .filter-pills-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-select-mini {
+      flex: 1;
+      height: 36px;
+      padding: 0 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-size: 0.76rem;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .filter-select-mini:focus {
+      border-color: var(--accent);
+    }
+
+    .view-mode-toggle {
+      display: flex;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 2px;
+      flex-shrink: 0;
+    }
+
+    .view-mode-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      width: 32px;
+      height: 30px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .view-mode-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 2px 6px var(--accent-glow);
+    }
+
+    /* ==========================================================================
+       QUEUES CONTAINER & SECTIONS
+       ========================================================================== */
+    .queues-container {
+      padding: 0.25rem 1rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .queue-group {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.25s ease;
+    }
+
+    .queue-group:focus-within, .queue-group:hover {
+      border-color: var(--border-medium);
+    }
+
+    .queue-group-header {
+      padding: 0.85rem 1rem;
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .queue-group-title-col {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .queue-group-icon {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .queue-group-name {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .queue-group-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .queue-group-count {
+      padding: 3px 9px;
+      border-radius: 12px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--border-medium);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .queue-lead-pill {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--warning);
+      background: var(--warning-bg);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 2px 7px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Queue Vehicles List */
+    .vehicles-list {
+      display: flex;
+      flex-direction: column;
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    /* ==========================================================================
+       VEHICLE CARD (RICH MOBILE DESIGN)
+       ========================================================================== */
+    .vehicle-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 0.75rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      transition: all 0.2s ease;
+    }
+
+    .vehicle-card:active {
+      background: var(--bg-surface-hover);
+    }
+
+    /* Spotlight for the #1 Vehicle in line */
+    .vehicle-card.lead-vehicle {
+      border-color: var(--lead-gold-border);
+      background: linear-gradient(135deg, var(--bg-surface-elevated) 0%, rgba(245, 158, 11, 0.05) 100%);
+      box-shadow: 0 4px 14px var(--lead-gold-glow);
+    }
+
+    .lead-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--lead-gold-gradient);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+      margin-bottom: 2px;
+    }
+
+    .lead-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .lead-banner-right {
+      font-size: 0.65rem;
+      opacity: 0.92;
+      font-weight: 600;
+    }
+
+    .card-top-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .card-left-identity {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+
+    /* Position Avatar */
+    .position-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      color: var(--text-muted);
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .vehicle-card.lead-vehicle .position-avatar {
+      background: var(--lead-gold-gradient);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 2px 8px var(--lead-gold-glow);
+    }
+
+    .plates-container {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Mercosul / Brazilian Plate Look */
+    .plate-chip {
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-highlight);
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .plate-chip.trailer {
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      background: var(--info-bg);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: var(--info);
+      font-weight: 700;
+    }
+
+    .card-tags {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .badge-frota {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .badge-frota.frota {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--border-medium);
+    }
+
+    .badge-frota.terceiro {
+      background: var(--info-bg);
+      color: var(--info);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    /* Recusa Badge in Card */
+    .badge-recusa-btn {
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      color: var(--danger);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .badge-recusa-btn:active {
+      transform: scale(0.92);
+      background: var(--danger);
+      color: #ffffff;
+    }
+
+    /* Card Details Row */
+    .card-details-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-top: 2px;
+    }
+
+    .vehicle-type-label {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .cooperado-label {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Card Footer Row */
+    .card-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 0.45rem;
+      margin-top: 2px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .time-in-queue {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+    }
+
+    .time-in-queue svg {
+      width: 12px;
+      height: 12px;
+      color: var(--accent);
+    }
+
+    .exact-date {
+      font-size: 0.66rem;
+      opacity: 0.85;
+    }
+
+    /* ==========================================================================
+       DENSE TABLE VIEW (ALTERNATIVE FOR QUICK SCANNING)
+       ========================================================================== */
+    .dense-table-wrapper {
+      overflow-x: auto;
+      width: 100%;
+    }
+
+    .dense-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.78rem;
+    }
+
+    .dense-table th {
+      padding: 7px 8px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .dense-table td {
+      padding: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      vertical-align: middle;
+    }
+
+    .dense-table tr:active {
+      background: var(--bg-surface-hover);
+    }
+
+    .dense-table tr.lead-row {
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    /* ==========================================================================
+       EMPTY QUEUE & SKELETON LOADERS
+       ========================================================================== */
+    .empty-state {
+      padding: 2.5rem 1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+    }
+
+    .empty-state-text {
+      font-size: 0.82rem;
+      max-width: 250px;
+    }
+
+    .skeleton-box {
+      background: linear-gradient(90deg, var(--bg-surface-elevated) 25%, var(--bg-surface-hover) 50%, var(--bg-surface-elevated) 75%);
+      background-size: 200% 100%;
+      animation: skeletonLoading 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes skeletonLoading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ==========================================================================
+       BOTTOM ACTION DOCK (STICKY SMARTPHONE NAVIGATION)
+       ========================================================================== */
+    .bottom-dock {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(60px + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 60;
+    }
+
+    .dock-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .dock-item svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .dock-item.active {
+      color: var(--accent);
+    }
+
+    .dock-item:active {
+      transform: scale(0.92);
+      color: var(--accent);
+    }
+
+    /* ==========================================================================
+       BOTTOM SHEET / MODAL (HISTÓRICO DE RECUSAS)
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal-backdrop.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .bottom-sheet {
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-medium);
+      border-radius: 20px 20px 0 0;
+      padding: 1.25rem 1.25rem calc(1.5rem + var(--safe-bottom));
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-backdrop.show .bottom-sheet {
+      transform: translateY(0);
+    }
+
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border-medium);
+      border-radius: 2px;
+      margin: 0 auto 1rem;
+    }
+
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .sheet-title {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .sheet-close-btn {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .history-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      padding-left: 14px;
+    }
+
+    .history-timeline::before {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border-subtle);
+    }
+
+    .history-card {
+      position: relative;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .history-bullet {
+      position: absolute;
+      left: -14px;
+      top: 14px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 6px var(--danger);
+    }
+
+    .history-date {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .history-desc {
+      font-size: 0.82rem;
+      color: var(--text-main);
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .history-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      width: fit-content;
+    }
+
+    .history-status-badge.red {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+    }
+
+    .history-status-badge.yellow {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* ==========================================================================
+       AUTH SECTION (MOBILE LOGIN)
+       ========================================================================== */
+    .mobile-auth-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: radial-gradient(circle at top, #0f271a 0%, var(--bg-base) 80%);
+    }
+
+    .mobile-auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-medium);
+      border-radius: 20px;
+      padding: 2rem 1.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .auth-brand-center {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .auth-brand-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: var(--accent-gradient);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .auth-title {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .auth-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .auth-form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .auth-label {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+    }
+
+    .auth-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .auth-input-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-muted);
+      width: 18px;
+      height: 18px;
+    }
+
+    .auth-input {
+      width: 100%;
+      height: 46px;
+      padding: 0 12px 0 38px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-medium);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    .auth-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .auth-submit-btn {
+      width: 100%;
+      height: 48px;
+      background: var(--accent-gradient);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      transition: all 0.2s ease;
+      margin-top: 1.5rem;
+    }
+
+    .auth-submit-btn:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    /* Toast Container */
+    #mobile-toast-container {
+      position: fixed;
+      top: calc(12px + var(--safe-top));
+      left: 1rem;
+      right: 1rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .mobile-toast {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-medium);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-md);
+      pointer-events: auto;
+      animation: toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes toastSlideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="mobile-toast-container"></div>
+
+  <!-- ==========================================================================
+       AUTHENTICATION SECTION (MOBILE LOGIN)
+       ========================================================================== -->
+  <section id="auth-section" class="mobile-auth-container hidden">
+    <div class="mobile-auth-card">
+      <div class="auth-brand-center">
+        <div class="auth-brand-icon">
+          <i data-lucide="truck" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h1 class="auth-title">Cootravale</h1>
+        <p class="auth-subtitle">Central de Fretes • Fila Mobile</p>
+      </div>
+
+      <form id="mobile-login-form">
+        <div class="auth-form-group">
+          <label class="auth-label" for="login-email">E-mail de Acesso</label>
+          <div class="auth-input-wrapper">
+            <i data-lucide="mail" class="auth-input-icon"></i>
+            <input class="auth-input" type="email" id="login-email" placeholder="nome@cootravale.com.br" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="auth-form-group">
+          <label class="auth-label" for="login-password">Senha</label>
+          <div class="auth-input-wrapper">
+            <i data-lucide="lock" class="auth-input-icon"></i>
+            <input class="auth-input" type="password" id="login-password" placeholder="Digite sua senha" required autocomplete="current-password">
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="auth-submit-btn">
+          <span>Acessar Painel de Filas</span>
+          <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+        </button>
+
+        <div style="margin-top: 1rem; text-align: center;">
+          <a href="index.html" style="font-size: 0.78rem; color: var(--accent); text-decoration: underline;">
+            Acessar versão Web Completa (Desktop)
+          </a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       MAIN MOBILE DASHBOARD VIEW
+       ========================================================================== -->
+  <div id="dashboard-section" class="hidden">
+
+    <!-- Top Sticky Header -->
+    <header class="mobile-header">
+      <div class="header-top-row">
+        <div class="brand-group">
+          <div class="brand-icon">
+            <i data-lucide="truck"></i>
+          </div>
+          <div class="brand-text-col">
+            <div class="brand-title">
+              <span>Cootravale</span>
+              <span class="brand-badge">Mobile</span>
+            </div>
+            <span class="brand-subtitle" id="header-user-email">Carregando filas...</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <!-- Refresh Countdown Pill -->
+          <div class="refresh-pill" id="btn-toggle-refresh" title="Pausar / Iniciar atualização automática">
+            <div class="pulse-dot" id="pulse-dot"></div>
+            <span id="countdown-text">30s</span>
+          </div>
+
+          <!-- Instant Reload -->
+          <button class="header-btn" id="btn-reload-now" title="Recarregar Dados Agora">
+            <i data-lucide="refresh-cw" id="icon-refresh" style="width: 16px; height: 16px;"></i>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button class="header-btn" id="btn-theme-toggle" title="Alternar Modo Escuro / Claro">
+            <i data-lucide="sun" id="icon-theme" style="width: 16px; height: 16px;"></i>
+          </button>
+
+          <!-- Back to Desktop View -->
+          <a href="index.html" class="header-btn header-btn-desktop" title="Alternar para visual Desktop">
+            <i data-lucide="monitor" style="width: 15px; height: 15px;"></i>
+            <span>PC</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Metrics Summary Strip -->
+    <section class="metrics-section">
+      <div class="metrics-grid">
+        <div class="metric-card accent" title="Total de Filas ativas">
+          <span class="metric-val" id="stat-queues">0</span>
+          <span class="metric-lbl">Filas</span>
+        </div>
+        <div class="metric-card blue" title="Total de Veículos na fila">
+          <span class="metric-val" id="stat-vehicles">0</span>
+          <span class="metric-lbl">Veículos</span>
+        </div>
+        <div class="metric-card warning" title="Veículos de Frota Própria">
+          <span class="metric-val" id="stat-frota">0</span>
+          <span class="metric-lbl">Frota</span>
+        </div>
+        <div class="metric-card danger" title="Recusas registradas">
+          <span class="metric-val" id="stat-recusas">0</span>
+          <span class="metric-lbl">Recusas</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Horizontal Swipeable Queue Selector Tabs -->
+    <nav class="queue-tabs-wrapper" id="queue-tabs-nav" aria-label="Seletor de Filas">
+      <button class="queue-tab-pill active" data-queue="all">
+        <span>Todas as Filas</span>
+        <span class="queue-tab-badge" id="tab-badge-all">0</span>
+      </button>
+      <!-- Dynamically filled with queue chips -->
+    </nav>
+
+    <!-- Search & Filters Toolbar -->
+    <section class="controls-toolbar">
+      <div class="search-input-box">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" id="mobile-search-input" class="mobile-search-input" placeholder="Buscar placa, regional ou cooperado...">
+        <button type="button" id="btn-clear-search" class="search-clear-btn" title="Limpar busca">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+
+      <div class="filter-pills-row">
+        <!-- Vehicle Type Filter -->
+        <select id="mobile-type-filter" class="filter-select-mini">
+          <option value="">Tipo: Todos</option>
+        </select>
+
+        <!-- Frota Filter -->
+        <select id="mobile-frota-filter" class="filter-select-mini">
+          <option value="all">Vínculo: Todos</option>
+          <option value="frota">Apenas Frota</option>
+          <option value="terceiro">Apenas Terceiros</option>
+        </select>
+
+        <!-- View Mode: Cards vs Dense -->
+        <div class="view-mode-toggle">
+          <button class="view-mode-btn active" id="btn-view-cards" title="Visualização em Cards">
+            <i data-lucide="layout-grid" style="width: 15px; height: 15px;"></i>
+          </button>
+          <button class="view-mode-btn" id="btn-view-dense" title="Visualização em Lista Compacta">
+            <i data-lucide="align-justify" style="width: 15px; height: 15px;"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Queues & Vehicle Cards Container -->
+    <main class="queues-container" id="queues-container">
+      <!-- Dynamically populated -->
+    </main>
+
+  </div>
+
+  <!-- ==========================================================================
+       BOTTOM FIXED DOCK (THUMB-FRIENDLY CONTROLS)
+       ========================================================================== -->
+  <div class="bottom-dock" id="bottom-dock">
+    <button class="dock-item active" id="dock-btn-queues" title="Início das Filas">
+      <i data-lucide="truck"></i>
+      <span>Filas</span>
+    </button>
+
+    <button class="dock-item" id="dock-btn-search" title="Focar na busca">
+      <i data-lucide="search"></i>
+      <span>Buscar</span>
+    </button>
+
+    <button class="dock-item" id="dock-btn-refresh" title="Atualizar agora">
+      <i data-lucide="refresh-cw"></i>
+      <span>Atualizar</span>
+    </button>
+
+    <a href="index.html" class="dock-item" title="Versão completa para Computador">
+      <i data-lucide="monitor"></i>
+      <span>Desktop</span>
+    </a>
+
+    <button class="dock-item" id="dock-btn-logout" title="Encerrar Sessão">
+      <i data-lucide="log-out"></i>
+      <span>Sair</span>
+    </button>
+  </div>
+
+  <!-- ==========================================================================
+       REFUSALS MODAL / BOTTOM SHEET
+       ========================================================================== -->
+  <div class="modal-backdrop" id="refusals-modal-backdrop">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      
+      <div class="sheet-header">
+        <div>
+          <h3 class="sheet-title" id="refusals-modal-title">Histórico de Recusas</h3>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="refusals-modal-subtitle">Detalhes dos fretes recusados</span>
+        </div>
+        <button class="sheet-close-btn" id="refusals-modal-close" title="Fechar">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+
+      <div class="history-timeline" id="refusals-timeline-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       JAVASCRIPT APPLICATION LOGIC
+       ========================================================================== -->
+  <script>
+    // Configuration
+    const SUPABASE_URL = "https://ebnquccajiphgfnvuehx.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_rbNRNEKmmEvKqKMpFmCAtg_2JezrKUZ";
+
+    // Supabase Client
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // State Management
+    const state = {
+      user: null,
+      queues: [],            // Raw records from vw_filas
+      filteredQueues: {},    // Grouped by descFila
+      vehicleTypes: [],      // Distinct types
+      selectedQueue: "all",  // "all" or specific queue name
+      viewMode: "cards",     // "cards" or "dense"
+      filters: {
+        search: "",
+        vehicleType: "",
+        frota: "all"
+      },
+      autoRefresh: {
+        active: true,
+        intervalId: null,
+        countdown: 30,
+        maxSeconds: 30
+      },
+      theme: "dark"
+    };
+
+    // DOM References
+    const dom = {
+      authSection: document.getElementById("auth-section"),
+      dashboardSection: document.getElementById("dashboard-section"),
+      bottomDock: document.getElementById("bottom-dock"),
+      loginForm: document.getElementById("mobile-login-form"),
+      loginEmail: document.getElementById("login-email"),
+      loginPass: document.getElementById("login-password"),
+      btnLoginSubmit: document.getElementById("btn-login-submit"),
+      headerUserEmail: document.getElementById("header-user-email"),
+      toastContainer: document.getElementById("mobile-toast-container"),
+
+      // Controls
+      btnToggleRefresh: document.getElementById("btn-toggle-refresh"),
+      pulseDot: document.getElementById("pulse-dot"),
+      countdownText: document.getElementById("countdown-text"),
+      btnReloadNow: document.getElementById("btn-reload-now"),
+      iconRefresh: document.getElementById("icon-refresh"),
+      btnThemeToggle: document.getElementById("btn-theme-toggle"),
+      iconTheme: document.getElementById("icon-theme"),
+
+      // Metrics
+      statQueues: document.getElementById("stat-queues"),
+      statVehicles: document.getElementById("stat-vehicles"),
+      statFrota: document.getElementById("stat-frota"),
+      statRecusas: document.getElementById("stat-recusas"),
+
+      // Filters & Nav
+      queueTabsNav: document.getElementById("queue-tabs-nav"),
+      tabBadgeAll: document.getElementById("tab-badge-all"),
+      searchInput: document.getElementById("mobile-search-input"),
+      btnClearSearch: document.getElementById("btn-clear-search"),
+      typeFilter: document.getElementById("mobile-type-filter"),
+      frotaFilter: document.getElementById("mobile-frota-filter"),
+      btnViewCards: document.getElementById("btn-view-cards"),
+      btnViewDense: document.getElementById("btn-view-dense"),
+
+      // Queues Viewport
+      queuesContainer: document.getElementById("queues-container"),
+
+      // Refusals Modal
+      refusalsModalBackdrop: document.getElementById("refusals-modal-backdrop"),
+      refusalsModalTitle: document.getElementById("refusals-modal-title"),
+      refusalsModalSubtitle: document.getElementById("refusals-modal-subtitle"),
+      refusalsModalClose: document.getElementById("refusals-modal-close"),
+      refusalsTimelineContainer: document.getElementById("refusals-timeline-container"),
+
+      // Bottom Dock Buttons
+      dockBtnQueues: document.getElementById("dock-btn-queues"),
+      dockBtnSearch: document.getElementById("dock-btn-search"),
+      dockBtnRefresh: document.getElementById("dock-btn-refresh"),
+      dockBtnLogout: document.getElementById("dock-btn-logout")
+    };
+
+    // ==========================================================================
+    // TOAST NOTIFICATIONS
+    // ==========================================================================
+    function showToast(message, type = "info") {
+      const toast = document.createElement("div");
+      toast.className = `mobile-toast`;
+      
+      let iconName = "info";
+      if (type === "success") iconName = "check-circle";
+      if (type === "error") iconName = "alert-triangle";
+      if (type === "warning") iconName = "alert-circle";
+
+      toast.innerHTML = `
+        <i data-lucide="${iconName}" style="width: 18px; height: 18px; color: ${type === 'success' ? 'var(--accent)' : type === 'error' ? 'var(--danger)' : 'var(--info)'}; flex-shrink: 0;"></i>
+        <span style="flex: 1; font-weight: 500;">${message}</span>
+      `;
+
+      dom.toastContainer.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-10px)";
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // ==========================================================================
+    // DATE & TIME FORMATTERS
+    // ==========================================================================
+    function formatDateTime(isoString) {
+      if (!isoString) return "";
+      const d = new Date(isoString);
+      return d.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function getRelativeTime(isoString) {
+      if (!isoString) return "";
+      const start = new Date(isoString);
+      const now = new Date();
+      const diffMs = now - start;
+
+      if (diffMs < 0) return "Agora";
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60) return `${diffMins} min`;
+
+      const diffHours = Math.floor(diffMins / 60);
+      const remainingMins = diffMins % 60;
+      if (diffHours < 24) return `${diffHours}h ${remainingMins}m`;
+
+      const diffDays = Math.floor(diffHours / 24);
+      const remainingHours = diffHours % 24;
+      return `${diffDays}d ${remainingHours}h`;
+    }
+
+    function formatPlate(plateString) {
+      if (!plateString) return "";
+      const cleaned = plateString.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (cleaned.length === 7) {
+        return cleaned.substring(0, 3) + "-" + cleaned.substring(3);
+      }
+      return cleaned;
+    }
+
+    // ==========================================================================
+    // THEME HANDLING
+    // ==========================================================================
+    function setupTheme() {
+      const saved = localStorage.getItem("cfc_theme") || "dark";
+      setTheme(saved);
+    }
+
+    function setTheme(theme) {
+      state.theme = theme;
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("cfc_theme", theme);
+      
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) {
+        themeMeta.setAttribute("content", theme === "dark" ? "#060c09" : "#f0f6f2");
+      }
+
+      if (dom.iconTheme) {
+        dom.iconTheme.setAttribute("data-lucide", theme === "dark" ? "sun" : "moon");
+        lucide.createIcons();
+      }
+    }
+
+    // ==========================================================================
+    // INITIALIZATION & AUTH STATE
+    // ==========================================================================
+    document.addEventListener("DOMContentLoaded", async () => {
+      setupTheme();
+      setupEventListeners();
+
+      // Check Supabase session
+      try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        if (session && session.user) {
+          handleSignIn(session.user);
+        } else {
+          handleSignOut();
+        }
+      } catch (err) {
+        console.warn("Sessão não detectada:", err);
+        handleSignOut();
+      }
+
+      // Listen for auth state changes
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (session && session.user) {
+          handleSignIn(session.user);
+        } else {
+          handleSignOut();
+        }
+      });
+    });
+
+    function handleSignIn(user) {
+      state.user = user;
+      dom.headerUserEmail.textContent = user.email || "Operador Conectado";
+
+      dom.authSection.classList.add("hidden");
+      dom.dashboardSection.classList.remove("hidden");
+      dom.bottomDock.classList.remove("hidden");
+
+      loadQueuesData(true);
+      startAutoRefresh();
+      lucide.createIcons();
+    }
+
+    function handleSignOut() {
+      state.user = null;
+      stopAutoRefresh();
+
+      dom.authSection.classList.remove("hidden");
+      dom.dashboardSection.classList.add("hidden");
+      dom.bottomDock.classList.add("hidden");
+      lucide.createIcons();
+    }
+
+    // ==========================================================================
+    // DATA FETCHING & PROCESSING
+    // ==========================================================================
+    async function loadQueuesData(showLoadingIndicator = false) {
+      if (showLoadingIndicator) {
+        renderSkeletons();
+      }
+
+      if (dom.iconRefresh) dom.iconRefresh.classList.add("spinning");
+
+      try {
+        const { data, error } = await supabaseClient
+          .from("vw_filas")
+          .select("*");
+
+        if (error) throw error;
+
+        state.queues = data || [];
+
+        // Extract vehicle types
+        const typesSet = new Set();
+        state.queues.forEach(item => {
+          if (item.tipo) typesSet.add(item.tipo);
+        });
+        state.vehicleTypes = Array.from(typesSet).sort();
+
+        populateVehicleTypes();
+        applyFiltersAndRender();
+        updateStats();
+
+        // Reset timer
+        state.autoRefresh.countdown = state.autoRefresh.maxSeconds;
+        updateAutoRefreshUI();
+
+      } catch (err) {
+        console.error("Erro ao carregar vw_filas:", err);
+        showToast("Erro ao conectar com servidor: " + (err.message || "Tente novamente"), "error");
+      } finally {
+        if (dom.iconRefresh) {
+          setTimeout(() => dom.iconRefresh.classList.remove("spinning"), 400);
+        }
+      }
+    }
+
+    function populateVehicleTypes() {
+      const currentVal = dom.typeFilter.value;
+      dom.typeFilter.innerHTML = '<option value="">Tipo: Todos</option>';
+
+      state.vehicleTypes.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t;
+        opt.textContent = t;
+        dom.typeFilter.appendChild(opt);
+      });
+
+      if (state.vehicleTypes.includes(currentVal)) {
+        dom.typeFilter.value = currentVal;
+      }
+    }
+
+    // ==========================================================================
+    // FILTERING & GROUPING
+    // ==========================================================================
+    function applyFiltersAndRender() {
+      const search = state.filters.search.toLowerCase();
+      const vType = state.filters.vehicleType;
+      const frota = state.filters.frota;
+      const targetQueue = state.selectedQueue;
+
+      // 1. Filter raw records
+      const filtered = state.queues.filter(item => {
+        const plateMatch = (item.placa && item.placa.toLowerCase().includes(search)) ||
+          (item.placa2 && item.placa2.toLowerCase().includes(search)) ||
+          (item.placa3 && item.placa3.toLowerCase().includes(search));
+        const coopMatch = item.nomeCooperado && item.nomeCooperado.toLowerCase().includes(search);
+        const queueMatch = item.descFila && item.descFila.toLowerCase().includes(search);
+
+        const searchMatch = !search || plateMatch || coopMatch || queueMatch;
+        const typeMatch = !vType || item.tipo === vType;
+
+        let frotaMatch = true;
+        if (frota === "frota") frotaMatch = item.frota === true;
+        if (frota === "terceiro") frotaMatch = item.frota === false;
+
+        let queueFilterMatch = true;
+        if (targetQueue !== "all") {
+          queueFilterMatch = item.descFila === targetQueue;
+        }
+
+        return searchMatch && typeMatch && frotaMatch && queueFilterMatch;
+      });
+
+      // 2. Group by descFila
+      const grouped = {};
+      filtered.forEach(item => {
+        const qName = item.descFila || "Fila não especificada";
+        if (!grouped[qName]) grouped[qName] = [];
+        grouped[qName].push(item);
+      });
+
+      // 3. Sort each queue ascending by dthRef
+      for (const qName in grouped) {
+        grouped[qName].sort((a, b) => {
+          const dateA = a.dthRef ? new Date(a.dthRef) : new Date(0);
+          const dateB = b.dthRef ? new Date(b.dthRef) : new Date(0);
+          return dateA - dateB;
+        });
+      }
+
+      state.filteredQueues = grouped;
+      renderQueueTabs();
+      renderQueuesView();
+    }
+
+    // ==========================================================================
+    // STATS UPDATE
+    // ==========================================================================
+    function updateStats() {
+      const allQueuesGrouped = {};
+      let totalVehicles = 0;
+      let totalFrota = 0;
+      let totalRecusas = 0;
+
+      state.queues.forEach(item => {
+        totalVehicles++;
+        if (item.descFila) allQueuesGrouped[item.descFila] = true;
+        if (item.frota) totalFrota++;
+        if (item.recusas && Array.isArray(item.recusas)) {
+          totalRecusas += item.recusas.length;
+        }
+      });
+
+      dom.statQueues.textContent = Object.keys(allQueuesGrouped).length;
+      dom.statVehicles.textContent = totalVehicles;
+      dom.statFrota.textContent = totalFrota;
+      dom.statRecusas.textContent = totalRecusas;
+      dom.tabBadgeAll.textContent = totalVehicles;
+    }
+
+    // ==========================================================================
+    // QUEUE PILL TABS
+    // ==========================================================================
+    function renderQueueTabs() {
+      // Collect counts per queue from all queues (or currently filtered by type/frota)
+      const queueCounts = {};
+      state.queues.forEach(item => {
+        const qName = item.descFila || "Outras";
+        queueCounts[qName] = (queueCounts[qName] || 0) + 1;
+      });
+
+      const uniqueQueues = Object.keys(queueCounts).sort();
+
+      // Remove existing dynamic tabs
+      const existingTabs = dom.queueTabsNav.querySelectorAll('.queue-tab-pill[data-queue]:not([data-queue="all"])');
+      existingTabs.forEach(t => t.remove());
+
+      // Append tab for each queue
+      uniqueQueues.forEach(qName => {
+        const btn = document.createElement("button");
+        btn.className = `queue-tab-pill ${state.selectedQueue === qName ? 'active' : ''}`;
+        btn.setAttribute("data-queue", qName);
+        btn.innerHTML = `
+          <span>${qName}</span>
+          <span class="queue-tab-badge">${queueCounts[qName] || 0}</span>
+        `;
+
+        btn.addEventListener("click", () => {
+          dom.queueTabsNav.querySelectorAll('.queue-tab-pill').forEach(el => el.classList.remove('active'));
+          btn.classList.add('active');
+          state.selectedQueue = qName;
+          applyFiltersAndRender();
+        });
+
+        dom.queueTabsNav.appendChild(btn);
+      });
+    }
+
+    // ==========================================================================
+    // RENDERING SKELETONS
+    // ==========================================================================
+    function renderSkeletons() {
+      dom.queuesContainer.innerHTML = `
+        <div class="queue-group">
+          <div class="queue-group-header">
+            <div class="skeleton-box" style="width: 140px; height: 18px;"></div>
+            <div class="skeleton-box" style="width: 50px; height: 18px;"></div>
+          </div>
+          <div class="vehicles-list">
+            ${Array(3).fill(0).map(() => `
+              <div class="vehicle-card">
+                <div class="skeleton-box" style="width: 100%; height: 20px;"></div>
+                <div class="skeleton-box" style="width: 70%; height: 14px; margin-top: 4px;"></div>
+                <div class="skeleton-box" style="width: 50%; height: 12px; margin-top: 4px;"></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================================================
+    // MAIN QUEUES VIEW RENDERING
+    // ==========================================================================
+    function renderQueuesView() {
+      dom.queuesContainer.innerHTML = "";
+
+      const queueNames = Object.keys(state.filteredQueues).sort();
+
+      if (queueNames.length === 0) {
+        dom.queuesContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">
+              <i data-lucide="search-x" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div style="font-weight: 700; color: var(--text-main);">Nenhum veículo encontrado</div>
+            <div class="empty-state-text">Ajuste os filtros de busca, tipo ou vínculo para visualizar veículos.</div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      queueNames.forEach(qName => {
+        const vehicles = state.filteredQueues[qName];
+        const groupEl = document.createElement("section");
+        groupEl.className = "queue-group";
+
+        // Group Header
+        const firstVehicle = vehicles[0];
+        let leadPillHTML = "";
+        if (firstVehicle) {
+          leadPillHTML = `
+            <span class="queue-lead-pill" title="Primeiro veículo da fila">
+              <i data-lucide="crown" style="width: 11px; height: 11px;"></i>
+              <span>1º: ${formatPlate(firstVehicle.placa)}</span>
+            </span>
+          `;
+        }
+
+        groupEl.innerHTML = `
+          <div class="queue-group-header">
+            <div class="queue-group-title-col">
+              <i data-lucide="git-merge" class="queue-group-icon" style="width: 18px; height: 18px;"></i>
+              <h2 class="queue-group-name" title="${qName}">${qName}</h2>
+            </div>
+            <div class="queue-group-meta">
+              ${leadPillHTML}
+              <span class="queue-group-count">${vehicles.length} ${vehicles.length === 1 ? 'veículo' : 'veículos'}</span>
+            </div>
+          </div>
+        `;
+
+        // Render Cards or Dense Table
+        if (state.viewMode === "cards") {
+          const listEl = document.createElement("div");
+          listEl.className = "vehicles-list";
+
+          vehicles.forEach((vehicle, idx) => {
+            const isLead = (idx === 0);
+            const card = document.createElement("article");
+            card.className = `vehicle-card ${isLead ? 'lead-vehicle' : ''}`;
+
+            const recCount = vehicle.recusas && Array.isArray(vehicle.recusas) ? vehicle.recusas.length : 0;
+            const recusaBtnHTML = recCount > 0 ? `
+              <button type="button" class="badge-recusa-btn" data-plate="${vehicle.placa}" title="Ver histórico de ${recCount} recusa(s)">
+                <i data-lucide="alert-triangle" style="width: 12px; height: 12px;"></i>
+                <span>${recCount} ${recCount === 1 ? 'recusa' : 'recusas'}</span>
+              </button>
+            ` : "";
+
+            const leadBannerHTML = isLead ? `
+              <div class="lead-banner">
+                <div class="lead-banner-left">
+                  <i data-lucide="star" style="width: 12px; height: 12px;"></i>
+                  <span>Próximo do Carregamento</span>
+                </div>
+                <div class="lead-banner-right">1º da Fila</div>
+              </div>
+            ` : "";
+
+            card.innerHTML = `
+              ${leadBannerHTML}
+              <div class="card-top-row">
+                <div class="card-left-identity">
+                  <div class="position-avatar">${idx + 1}º</div>
+                  <div class="plates-container">
+                    <span class="plate-chip" title="Placa Principal">${formatPlate(vehicle.placa)}</span>
+                    ${vehicle.placa2 ? `<span class="plate-chip trailer" title="Reboque 1"><i data-lucide="box" style="width: 10px; height: 10px;"></i> ${formatPlate(vehicle.placa2)}</span>` : ''}
+                    ${vehicle.placa3 ? `<span class="plate-chip trailer" title="Reboque 2"><i data-lucide="box" style="width: 10px; height: 10px;"></i> ${formatPlate(vehicle.placa3)}</span>` : ''}
+                  </div>
+                </div>
+
+                <div class="card-tags">
+                  ${vehicle.frota ? `
+                    <span class="badge-frota frota" title="Frota própria Cootravale">
+                      <i data-lucide="shield-check" style="width: 11px; height: 11px;"></i> Frota
+                    </span>
+                  ` : `
+                    <span class="badge-frota terceiro" title="Veículo Terceirizado">
+                      <i data-lucide="user" style="width: 11px; height: 11px;"></i> Terceiro
+                    </span>
+                  `}
+                  ${recusaBtnHTML}
+                </div>
+              </div>
+
+              <div class="card-details-row">
+                <div class="vehicle-type-label">
+                  <i data-lucide="truck" style="width: 13px; height: 13px; color: var(--accent);"></i>
+                  <span>${vehicle.tipo || 'Tipo não informado'}</span>
+                </div>
+                <div class="cooperado-label" title="${vehicle.nomeCooperado || 'Não informado'}">
+                  <i data-lucide="user-check" style="width: 12px; height: 12px;"></i>
+                  <span>${vehicle.nomeCooperado || 'Cooperado não informado'}</span>
+                </div>
+              </div>
+
+              <div class="card-footer-row">
+                <div class="time-in-queue" title="Entrada na fila: ${formatDateTime(vehicle.dthRef)}">
+                  <i data-lucide="clock"></i>
+                  <span>Entrou há: <strong>${getRelativeTime(vehicle.dthRef)}</strong></span>
+                </div>
+                <div class="exact-date">${formatDateTime(vehicle.dthRef)}</div>
+              </div>
+            `;
+
+            // Refusals click
+            const recBtn = card.querySelector(".badge-recusa-btn");
+            if (recBtn) {
+              recBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                openRefusalsModal(vehicle);
+              });
+            }
+
+            listEl.appendChild(card);
+          });
+
+          groupEl.appendChild(listEl);
+
+        } else {
+          // Dense Table View
+          const tableWrapper = document.createElement("div");
+          tableWrapper.className = "dense-table-wrapper";
+          
+          let tableRowsHTML = "";
+          vehicles.forEach((vehicle, idx) => {
+            const isLead = (idx === 0);
+            const recCount = vehicle.recusas && Array.isArray(vehicle.recusas) ? vehicle.recusas.length : 0;
+
+            tableRowsHTML += `
+              <tr class="${isLead ? 'lead-row' : ''}">
+                <td style="width: 32px; font-weight: 800; font-family: var(--font-heading); color: ${isLead ? 'var(--warning)' : 'var(--text-muted)'}; text-align: center;">
+                  ${idx + 1}º
+                </td>
+                <td>
+                  <div style="font-weight: 800; font-family: var(--font-heading); color: var(--accent); letter-spacing: 0.04em;">
+                    ${formatPlate(vehicle.placa)}
+                  </div>
+                  ${vehicle.placa2 ? `<span style="font-size: 0.65rem; color: var(--info);">${formatPlate(vehicle.placa2)}</span>` : ''}
+                </td>
+                <td>
+                  <div style="font-weight: 600; color: var(--text-main); font-size: 0.78rem;">${vehicle.tipo || 'N/D'}</div>
+                  <div style="font-size: 0.68rem; color: var(--text-muted);">${vehicle.nomeCooperado || 'N/D'}</div>
+                </td>
+                <td style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">
+                  ${getRelativeTime(vehicle.dthRef)}
+                </td>
+                <td style="text-align: center; width: 44px;">
+                  ${recCount > 0 ? `
+                    <button type="button" class="badge-recusa-btn" data-plate="${vehicle.placa}" style="padding: 2px 6px;">
+                      ${recCount}
+                    </button>
+                  ` : `<span style="opacity: 0.3;">-</span>`}
+                </td>
+              </tr>
+            `;
+          });
+
+          tableWrapper.innerHTML = `
+            <table class="dense-table">
+              <thead>
+                <tr>
+                  <th style="text-align: center;">Pos</th>
+                  <th>Placas</th>
+                  <th>Veículo / Cooperado</th>
+                  <th>Tempo</th>
+                  <th style="text-align: center;">Rec.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHTML}
+              </tbody>
+            </table>
+          `;
+
+          // Refusals click inside dense table
+          tableWrapper.querySelectorAll(".badge-recusa-btn").forEach(btn => {
+            const plate = btn.getAttribute("data-plate");
+            const v = vehicles.find(item => item.placa === plate);
+            if (v) {
+              btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                openRefusalsModal(v);
+              });
+            }
+          });
+
+          groupEl.appendChild(tableWrapper);
+        }
+
+        dom.queuesContainer.appendChild(groupEl);
+      });
+
+      lucide.createIcons();
+    }
+
+    // ==========================================================================
+    // REFUSALS MODAL LOGIC
+    // ==========================================================================
+    function openRefusalsModal(vehicle) {
+      dom.refusalsModalTitle.textContent = `Recusas: ${formatPlate(vehicle.placa)}`;
+      dom.refusalsModalSubtitle.textContent = `${vehicle.nomeCooperado || 'Cooperado'} • ${vehicle.tipo || 'Veículo'}`;
+      dom.refusalsTimelineContainer.innerHTML = "";
+
+      const recusas = vehicle.recusas || [];
+      if (recusas.length === 0) {
+        dom.refusalsTimelineContainer.innerHTML = `
+          <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.8rem;">
+            Nenhum detalhe de recusa registrado para esta placa.
+          </div>
+        `;
+      } else {
+        // Sort descending by date
+        const sorted = [...recusas].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        sorted.forEach(rec => {
+          const item = document.createElement("div");
+          item.className = "history-card";
+
+          const textDesc = rec.descricao || "Sem justificativa fornecida";
+          let isFimFila = false;
+          let hasFimFila = false;
+
+          if (textDesc.includes("Fim de fila: true") || textDesc.includes("Fim de fila:  true")) {
+            isFimFila = true;
+            hasFimFila = true;
+          } else if (textDesc.includes("Fim de fila: false") || textDesc.includes("Fim de fila:  false")) {
+            isFimFila = false;
+            hasFimFila = true;
+          }
+
+          const cleanDesc = textDesc.replace(/# Fim de fila:.*$/m, "").trim();
+
+          let statusBadgeHTML = "";
+          if (hasFimFila) {
+            if (isFimFila) {
+              statusBadgeHTML = `
+                <span class="history-status-badge red">
+                  <i data-lucide="arrow-down-right" style="width: 12px; height: 12px;"></i>
+                  <span>Enviado ao fim da fila</span>
+                </span>
+              `;
+            } else {
+              statusBadgeHTML = `
+                <span class="history-status-badge yellow">
+                  <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                  <span>Posição preservada</span>
+                </span>
+              `;
+            }
+          }
+
+          item.innerHTML = `
+            <div class="history-bullet"></div>
+            <div class="history-date">${formatDateTime(rec.created_at)}</div>
+            <div class="history-desc">${cleanDesc}</div>
+            ${statusBadgeHTML}
+          `;
+
+          dom.refusalsTimelineContainer.appendChild(item);
+        });
+      }
+
+      dom.refusalsModalBackdrop.classList.add("show");
+      lucide.createIcons();
+    }
+
+    function closeRefusalsModal() {
+      dom.refusalsModalBackdrop.classList.remove("show");
+    }
+
+    // ==========================================================================
+    // AUTO REFRESH CONTROLLER
+    // ==========================================================================
+    function startAutoRefresh() {
+      if (state.autoRefresh.intervalId) clearInterval(state.autoRefresh.intervalId);
+
+      state.autoRefresh.countdown = state.autoRefresh.maxSeconds;
+      updateAutoRefreshUI();
+
+      state.autoRefresh.intervalId = setInterval(() => {
+        if (!state.autoRefresh.active) return;
+        state.autoRefresh.countdown--;
+
+        if (state.autoRefresh.countdown <= 0) {
+          loadQueuesData(false);
+          state.autoRefresh.countdown = state.autoRefresh.maxSeconds;
+        }
+        updateAutoRefreshUI();
+      }, 1000);
+    }
+
+    function stopAutoRefresh() {
+      if (state.autoRefresh.intervalId) {
+        clearInterval(state.autoRefresh.intervalId);
+        state.autoRefresh.intervalId = null;
+      }
+      updateAutoRefreshUI();
+    }
+
+    function updateAutoRefreshUI() {
+      if (state.autoRefresh.active) {
+        dom.pulseDot.classList.remove("paused");
+        dom.countdownText.textContent = `${state.autoRefresh.countdown}s`;
+      } else {
+        dom.pulseDot.classList.add("paused");
+        dom.countdownText.textContent = "Pausa";
+      }
+    }
+
+    // ==========================================================================
+    // EVENT LISTENERS
+    // ==========================================================================
+    function setupEventListeners() {
+      // Login Form
+      dom.loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = dom.loginEmail.value.trim();
+        const password = dom.loginPass.value;
+
+        if (!email || !password) {
+          showToast("Informe email e senha para entrar", "warning");
+          return;
+        }
+
+        dom.btnLoginSubmit.disabled = true;
+        dom.btnLoginSubmit.innerHTML = `<span>Entrando...</span>`;
+
+        try {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          showToast("Acesso autorizado com sucesso!", "success");
+        } catch (err) {
+          showToast(err.message || "Credenciais inválidas", "error");
+          dom.btnLoginSubmit.disabled = false;
+          dom.btnLoginSubmit.innerHTML = `<span>Acessar Painel de Filas</span><i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>`;
+          lucide.createIcons();
+        }
+      });
+
+      // Logout button in bottom dock
+      dom.dockBtnLogout.addEventListener("click", async () => {
+        try {
+          await supabaseClient.auth.signOut();
+          showToast("Sessão encerrada com sucesso.", "info");
+        } catch (err) {
+          showToast("Erro ao encerrar sessão.", "error");
+        }
+      });
+
+      // Manual Reload
+      dom.btnReloadNow.addEventListener("click", () => {
+        loadQueuesData(false);
+        showToast("Atualizando dados da fila...", "info");
+      });
+
+      dom.dockBtnRefresh.addEventListener("click", () => {
+        loadQueuesData(false);
+        showToast("Atualizando dados da fila...", "info");
+      });
+
+      // Auto Refresh Toggle
+      dom.btnToggleRefresh.addEventListener("click", () => {
+        state.autoRefresh.active = !state.autoRefresh.active;
+        if (state.autoRefresh.active) {
+          startAutoRefresh();
+          showToast("Atualização automática retomada", "success");
+        } else {
+          updateAutoRefreshUI();
+          showToast("Atualização automática pausada", "info");
+        }
+      });
+
+      // Theme Toggle
+      dom.btnThemeToggle.addEventListener("click", () => {
+        const next = state.theme === "dark" ? "light" : "dark";
+        setTheme(next);
+        showToast(`Tema alterado para ${next === 'dark' ? 'Modo Escuro' : 'Modo Claro'}`, "info");
+      });
+
+      // Search Input
+      dom.searchInput.addEventListener("input", (e) => {
+        state.filters.search = e.target.value.trim();
+        dom.btnClearSearch.classList.toggle("visible", state.filters.search.length > 0);
+        applyFiltersAndRender();
+      });
+
+      dom.btnClearSearch.addEventListener("click", () => {
+        dom.searchInput.value = "";
+        state.filters.search = "";
+        dom.btnClearSearch.classList.remove("visible");
+        applyFiltersAndRender();
+        dom.searchInput.focus();
+      });
+
+      // Type Filter
+      dom.typeFilter.addEventListener("change", (e) => {
+        state.filters.vehicleType = e.target.value;
+        applyFiltersAndRender();
+      });
+
+      // Frota Filter
+      dom.frotaFilter.addEventListener("change", (e) => {
+        state.filters.frota = e.target.value;
+        applyFiltersAndRender();
+      });
+
+      // View Mode Toggles
+      dom.btnViewCards.addEventListener("click", () => {
+        state.viewMode = "cards";
+        dom.btnViewCards.classList.add("active");
+        dom.btnViewDense.classList.remove("active");
+        applyFiltersAndRender();
+      });
+
+      dom.btnViewDense.addEventListener("click", () => {
+        state.viewMode = "dense";
+        dom.btnViewDense.classList.add("active");
+        dom.btnViewCards.classList.remove("active");
+        applyFiltersAndRender();
+      });
+
+      // Queue Tab: "Todas"
+      const allTabBtn = dom.queueTabsNav.querySelector('[data-queue="all"]');
+      if (allTabBtn) {
+        allTabBtn.addEventListener("click", () => {
+          dom.queueTabsNav.querySelectorAll('.queue-tab-pill').forEach(el => el.classList.remove('active'));
+          allTabBtn.classList.add('active');
+          state.selectedQueue = "all";
+          applyFiltersAndRender();
+        });
+      }
+
+      // Bottom Dock Search trigger
+      dom.dockBtnSearch.addEventListener("click", () => {
+        dom.searchInput.focus();
+        dom.searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+
+      dom.dockBtnQueues.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      // Modal Close
+      dom.refusalsModalClose.addEventListener("click", closeRefusalsModal);
+      dom.refusalsModalBackdrop.addEventListener("click", (e) => {
+        if (e.target === dom.refusalsModalBackdrop) closeRefusalsModal();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeRefusalsModal();
+      });
+    }
+  </script>
+</body>
+</html>
