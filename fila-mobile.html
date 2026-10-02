@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#060c09">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,7 +13,9 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
 
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -113,14 +117,17 @@
     /* ==========================================================================
        RESET & BASE STYLES
        ========================================================================== */
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html,
+    body {
       width: 100%;
       min-height: 100%;
       background-color: var(--bg-base);
@@ -139,7 +146,9 @@
       flex-direction: column;
     }
 
-    button, input, select {
+    button,
+    input,
+    select {
       font-family: inherit;
     }
 
@@ -313,12 +322,23 @@
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+      }
     }
 
     @keyframes spin {
-      100% { transform: rotate(360deg); }
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     .spinning {
@@ -374,10 +394,21 @@
       white-space: nowrap;
     }
 
-    .metric-card.accent .metric-val { color: var(--accent); }
-    .metric-card.blue .metric-val { color: var(--info); }
-    .metric-card.warning .metric-val { color: var(--warning); }
-    .metric-card.danger .metric-val { color: var(--danger); }
+    .metric-card.accent .metric-val {
+      color: var(--accent);
+    }
+
+    .metric-card.blue .metric-val {
+      color: var(--info);
+    }
+
+    .metric-card.warning .metric-val {
+      color: var(--warning);
+    }
+
+    .metric-card.danger .metric-val {
+      color: var(--danger);
+    }
 
     /* ==========================================================================
        HORIZONTAL QUEUE SELECTOR TABS (SMARTHOME / MOBILE TAP PILLS)
@@ -575,7 +606,8 @@
       transition: border-color 0.25s ease;
     }
 
-    .queue-group:focus-within, .queue-group:hover {
+    .queue-group:focus-within,
+    .queue-group:hover {
       border-color: var(--border-medium);
     }
 
@@ -963,8 +995,13 @@
     }
 
     @keyframes skeletonLoading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
     }
 
     /* ==========================================================================
@@ -1324,11 +1361,19 @@
     }
 
     @keyframes toastSlideDown {
-      from { transform: translateY(-20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      from {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- Toast Notification Container -->
@@ -1352,7 +1397,8 @@
           <label class="auth-label" for="login-email">E-mail de Acesso</label>
           <div class="auth-input-wrapper">
             <i data-lucide="mail" class="auth-input-icon"></i>
-            <input class="auth-input" type="email" id="login-email" placeholder="nome@cootravale.com.br" required autocomplete="username">
+            <input class="auth-input" type="email" id="login-email" placeholder="nome@cootravale.com.br" required
+              autocomplete="username">
           </div>
         </div>
 
@@ -1360,7 +1406,8 @@
           <label class="auth-label" for="login-password">Senha</label>
           <div class="auth-input-wrapper">
             <i data-lucide="lock" class="auth-input-icon"></i>
-            <input class="auth-input" type="password" id="login-password" placeholder="Digite sua senha" required autocomplete="current-password">
+            <input class="auth-input" type="password" id="login-password" placeholder="Digite sua senha" required
+              autocomplete="current-password">
           </div>
         </div>
 
@@ -1460,7 +1507,8 @@
     <section class="controls-toolbar">
       <div class="search-input-box">
         <i data-lucide="search" class="search-icon"></i>
-        <input type="text" id="mobile-search-input" class="mobile-search-input" placeholder="Buscar placa, regional ou cooperado...">
+        <input type="text" id="mobile-search-input" class="mobile-search-input"
+          placeholder="Buscar placa, regional ou cooperado...">
         <button type="button" id="btn-clear-search" class="search-clear-btn" title="Limpar busca">
           <i data-lucide="x" style="width: 16px; height: 16px;"></i>
         </button>
@@ -1534,11 +1582,12 @@
   <div class="modal-backdrop" id="refusals-modal-backdrop">
     <div class="bottom-sheet">
       <div class="sheet-handle"></div>
-      
+
       <div class="sheet-header">
         <div>
           <h3 class="sheet-title" id="refusals-modal-title">Histórico de Recusas</h3>
-          <span style="font-size: 0.72rem; color: var(--text-muted);" id="refusals-modal-subtitle">Detalhes dos fretes recusados</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="refusals-modal-subtitle">Detalhes dos fretes
+            recusados</span>
         </div>
         <button class="sheet-close-btn" id="refusals-modal-close" title="Fechar">
           <i data-lucide="x" style="width: 18px; height: 18px;"></i>
@@ -1645,7 +1694,7 @@
     function showToast(message, type = "info") {
       const toast = document.createElement("div");
       toast.className = `mobile-toast`;
-      
+
       let iconName = "info";
       if (type === "success") iconName = "check-circle";
       if (type === "error") iconName = "alert-triangle";
@@ -1722,7 +1771,7 @@
       state.theme = theme;
       document.documentElement.setAttribute("data-theme", theme);
       localStorage.setItem("cfc_theme", theme);
-      
+
       const themeMeta = document.querySelector('meta[name="theme-color"]');
       if (themeMeta) {
         themeMeta.setAttribute("content", theme === "dark" ? "#060c09" : "#f0f6f2");
@@ -2061,7 +2110,7 @@
               <div class="lead-banner">
                 <div class="lead-banner-left">
                   <i data-lucide="star" style="width: 12px; height: 12px;"></i>
-                  <span>Próximo do Carregamento</span>
+                  <span>Primeiro Colocado</span>
                 </div>
                 <div class="lead-banner-right">1º da Fila</div>
               </div>
@@ -2131,7 +2180,7 @@
           // Dense Table View
           const tableWrapper = document.createElement("div");
           tableWrapper.className = "dense-table-wrapper";
-          
+
           let tableRowsHTML = "";
           vehicles.forEach((vehicle, idx) => {
             const isLead = (idx === 0);
@@ -2463,4 +2512,5 @@
     }
   </script>
 </body>
+
 </html>

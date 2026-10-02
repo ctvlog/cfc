@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Central de Fretes Cootravale</title>
-  
+
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="style.css?v=1.0.5">
-  
+
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
+
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
 
   <!-- Toast Notification Container -->
@@ -29,28 +31,31 @@
         <h1 class="auth-title">Cootravale</h1>
         <p class="auth-subtitle">Central de Fretes - Gestão de Filas</p>
       </div>
-      
+
       <form id="login-form">
         <div class="form-group">
           <label class="form-label" for="login-email">E-mail</label>
           <div class="input-with-icon">
             <i data-lucide="mail" class="input-icon"></i>
-            <input class="form-input" type="email" id="login-email" placeholder="nome@cootravale.com.br" required autocomplete="username">
+            <input class="form-input" type="email" id="login-email" placeholder="nome@cootravale.com.br" required
+              autocomplete="username">
           </div>
         </div>
-        
+
         <div class="form-group">
           <label class="form-label" for="login-password">Senha</label>
           <div class="input-with-icon">
             <i data-lucide="lock" class="input-icon"></i>
-            <input class="form-input" type="password" id="login-password" placeholder="Digite sua senha" required autocomplete="current-password">
+            <input class="form-input" type="password" id="login-password" placeholder="Digite sua senha" required
+              autocomplete="current-password">
           </div>
         </div>
-        
+
         <div class="login-form-options">
-          <a href="reset-password.html" class="auth-link" title="Redefinir senha ou ativar cadastro com convite">Esqueceu a senha ou primeiro acesso?</a>
+          <a href="reset-password.html" class="auth-link"
+            title="Redefinir senha ou ativar cadastro com convite">Esqueceu a senha ou primeiro acesso?</a>
         </div>
-        
+
         <button type="submit" id="login-btn" class="btn">
           <span>Entrar</span>
         </button>
@@ -60,7 +65,7 @@
 
   <!-- DASHBOARD SECTION -->
   <section id="dashboard-section" class="app-layout hidden">
-    
+
     <!-- Collapsible Sidebar -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
@@ -72,7 +77,7 @@
           <div class="logo-sub">Central de Fretes</div>
         </div>
       </div>
-      
+
       <div class="sidebar-content">
         <!-- Navigation Menu -->
         <div id="sidebar-admin-nav" class="hidden">
@@ -82,7 +87,8 @@
               <i data-lucide="layout-grid"></i>
               <span>Filas de Carregamento</span>
             </button>
-            <a href="fila-mobile.html" class="nav-item" style="text-decoration: none;" title="Abrir painel otimizado para celular e smarthome">
+            <a href="fila-mobile.html" class="nav-item" style="text-decoration: none;"
+              title="Abrir painel otimizado para celular e smarthome">
               <i data-lucide="smartphone"></i>
               <span>Fila Mobile</span>
             </a>
@@ -118,7 +124,7 @@
                 <span class="stat-lbl">Filas Ativas</span>
               </div>
             </div>
-            
+
             <div class="stat-item" title="Total de veículos registrados nas filas">
               <div class="stat-icon green">
                 <i data-lucide="truck" style="width: 20px; height: 20px;"></i>
@@ -128,7 +134,7 @@
                 <span class="stat-lbl">Veículos</span>
               </div>
             </div>
-            
+
             <div class="stat-item" title="Veículos de frota própria">
               <div class="stat-icon blue">
                 <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
@@ -138,7 +144,7 @@
                 <span class="stat-lbl">Frota Própria</span>
               </div>
             </div>
-            
+
             <div class="stat-item" title="Histórico total de recusas registradas">
               <div class="stat-icon orange">
                 <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
@@ -151,7 +157,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Sidebar Footer User Profile -->
       <div class="sidebar-footer">
         <div class="user-info">
@@ -176,7 +182,7 @@
 
     <!-- Main Content Container -->
     <main class="main-content">
-      
+
       <!-- Top Application Header -->
       <header class="app-header">
         <div class="header-left">
@@ -185,69 +191,74 @@
           </button>
           <div class="header-title-container">
             <h2 class="header-title">Filas de Carregamento</h2>
-            <span class="header-subtitle">Painel Regional de Monitoramento de Placas</span>
+            <span class="header-subtitle">Central de Fretes | v1.0</span>
           </div>
         </div>
-        
+
         <div class="header-right">
           <!-- Refresh indicator & Controls -->
           <div class="refresh-indicator">
             <div class="indicator-dot active" id="refresh-indicator-dot"></div>
             <span id="refresh-countdown-text">Atualizando em 30s</span>
           </div>
-          
+
           <button class="btn-icon" id="btn-toggle-auto-refresh" title="Pausar / Iniciar Atualização Automática">
             <i data-lucide="pause"></i>
           </button>
-          
+
           <button class="btn-icon" id="btn-refresh" title="Recarregar Dados Agora">
             <i data-lucide="refresh-cw"></i>
           </button>
 
           <!-- Mobile View Button -->
-          <a href="fila-mobile.html" class="btn-icon" id="btn-mobile-view" title="Abrir Painel de Fila Mobile / Smarthome" style="color: var(--accent); border-color: rgba(16, 185, 129, 0.3); background: var(--accent-bg-glow); text-decoration: none;">
+          <a href="fila-mobile.html" class="btn-icon" id="btn-mobile-view"
+            title="Abrir Painel de Fila Mobile / Smarthome"
+            style="color: var(--accent); border-color: rgba(16, 185, 129, 0.3); background: var(--accent-bg-glow); text-decoration: none;">
             <i data-lucide="smartphone"></i>
           </a>
-          
+
           <!-- Theme Toggle -->
           <button class="btn-icon" id="theme-toggle-btn" title="Alternar Modo Escuro / Claro">
             <i data-lucide="sun"></i>
           </button>
         </div>
       </header>
-      
+
       <!-- Control Bar (Filters) -->
       <section class="control-bar">
         <div class="filter-group">
           <div class="filter-input-wrapper">
             <i data-lucide="search" class="filter-icon"></i>
-            <input type="text" id="search-input" class="filter-input" placeholder="Buscar placa, regional ou cooperado...">
+            <input type="text" id="search-input" class="filter-input"
+              placeholder="Buscar placa, regional ou cooperado...">
           </div>
         </div>
-        
+
         <div class="filter-group" style="flex: 0 1 auto;">
           <select id="vehicle-type-filter" class="filter-select">
             <option value="">Todos os tipos</option>
           </select>
         </div>
-        
+
         <div class="filter-group" style="flex: 0 1 auto;">
           <select id="frota-filter" class="filter-select">
             <option value="all">Vínculo: Todos</option>
             <option value="frota">Apenas Frota</option>
-            <option value="terceiro">Apenas Terceiros</option>
+            <option value="terceiro">Apenas Não Frota</option>
           </select>
         </div>
 
         <!-- Button to Mobile View in Queue Panel -->
         <div class="filter-group" style="flex: 0 0 auto; margin-left: auto;">
-          <a href="fila-mobile.html" class="btn btn-sm btn-secondary" id="btn-open-mobile-control" title="Acessar painel de fila otimizado para celular ou smarthome" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; height: 35px; padding: 0 12px; font-size: 0.82rem; font-weight: 600; border-color: var(--border-color); color: var(--text-primary); white-space: nowrap;">
+          <a href="fila-mobile.html" class="btn btn-sm btn-secondary" id="btn-open-mobile-control"
+            title="Acessar painel de fila otimizado para celular ou smarthome"
+            style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; height: 35px; padding: 0 12px; font-size: 0.82rem; font-weight: 600; border-color: var(--border-color); color: var(--text-primary); white-space: nowrap;">
             <i data-lucide="smartphone" style="width: 15px; height: 15px; color: var(--accent);"></i>
             <span>Painel Mobile</span>
           </a>
         </div>
       </section>
-      
+
       <!-- Dynamic Queues Tables Grid Viewport -->
       <section class="queues-viewport" id="queues-viewport">
         <!-- Rendered dynamically by app.js -->
@@ -262,11 +273,13 @@
             <span class="crud-subtitle">Gerenciamento de veículos da central de fretes</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-sm btn-secondary" id="btn-refresh-vehicles" style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-vehicles"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
               <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
               <span>Recarregar</span>
             </button>
-            <button class="btn btn-sm" id="btn-new-vehicle" style="width: auto; display: flex; align-items: center; gap: 6px;">
+            <button class="btn btn-sm" id="btn-new-vehicle"
+              style="width: auto; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
               <span>Novo Veículo</span>
             </button>
@@ -349,7 +362,8 @@
               </select>
             </div>
 
-            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-vehicles-filters" title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-vehicles-filters"
+              title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
               <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
               <span>Limpar</span>
             </button>
@@ -373,21 +387,25 @@
               <!-- Rendered dynamically by app.js -->
             </tbody>
           </table>
-          
+
           <!-- Enhanced Pagination controls for Vehicles -->
           <div class="pagination-controls access-pagination">
             <span class="pagination-info" id="vehicles-pagination-info">Carregando paginação...</span>
             <div class="pagination-buttons">
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-vehicles-page" title="Primeira Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-vehicles-page"
+                title="Primeira Página" disabled>
                 <i data-lucide="chevrons-left"></i>
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-vehicles-page" title="Página Anterior" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-vehicles-page" title="Página Anterior"
+                disabled>
                 <i data-lucide="chevron-left"></i> Anterior
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-vehicles-page" title="Próxima Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-vehicles-page" title="Próxima Página"
+                disabled>
                 Próximo <i data-lucide="chevron-right"></i>
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-vehicles-page" title="Última Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-vehicles-page" title="Última Página"
+                disabled>
                 <i data-lucide="chevrons-right"></i>
               </button>
             </div>
@@ -403,11 +421,13 @@
             <span class="crud-subtitle">Gerenciamento de cooperados e seus contatos</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-sm btn-secondary" id="btn-refresh-cooperados" style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-cooperados"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
               <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
               <span>Recarregar</span>
             </button>
-            <button class="btn btn-sm" id="btn-new-cooperado" style="width: auto; display: flex; align-items: center; gap: 6px;">
+            <button class="btn btn-sm" id="btn-new-cooperado"
+              style="width: auto; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
               <span>Novo Cooperado</span>
             </button>
@@ -450,7 +470,8 @@
         <div class="crud-toolbar access-toolbar">
           <div class="crud-search-wrapper">
             <i data-lucide="search" class="filter-icon"></i>
-            <input type="text" id="crud-cooperados-search-input" class="filter-input" placeholder="Buscar por nome, código ou contato...">
+            <input type="text" id="crud-cooperados-search-input" class="filter-input"
+              placeholder="Buscar por nome, código ou contato...">
           </div>
 
           <div class="access-filters-group">
@@ -492,7 +513,8 @@
               </select>
             </div>
 
-            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-cooperados-filters" title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-cooperados-filters"
+              title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
               <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
               <span>Limpar</span>
             </button>
@@ -514,21 +536,25 @@
               <!-- Rendered dynamically by app.js -->
             </tbody>
           </table>
-          
+
           <!-- Enhanced Pagination controls for Cooperados -->
           <div class="pagination-controls access-pagination">
             <span class="pagination-info" id="cooperados-pagination-info">Carregando paginação...</span>
             <div class="pagination-buttons">
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-cooperados-page" title="Primeira Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-cooperados-page"
+                title="Primeira Página" disabled>
                 <i data-lucide="chevrons-left"></i>
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-cooperados-page" title="Página Anterior" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-cooperados-page"
+                title="Página Anterior" disabled>
                 <i data-lucide="chevron-left"></i> Anterior
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-cooperados-page" title="Próxima Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-cooperados-page"
+                title="Próxima Página" disabled>
                 Próximo <i data-lucide="chevron-right"></i>
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-cooperados-page" title="Última Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-cooperados-page" title="Última Página"
+                disabled>
                 <i data-lucide="chevrons-right"></i>
               </button>
             </div>
@@ -544,15 +570,18 @@
             <span class="crud-subtitle">Gerenciamento de contatos, permissões e aprovações (Digisac)</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <button class="btn btn-sm btn-secondary" id="btn-sync-access" style="width: auto; display: flex; align-items: center; gap: 6px;" title="Sincronizar contatos via n8n">
+            <button class="btn btn-sm btn-secondary" id="btn-sync-access"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Sincronizar contatos via n8n">
               <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
               <span>Sincronizar</span>
             </button>
-            <button class="btn btn-sm btn-secondary" id="btn-refresh-access" style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-access"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
               <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
               <span>Recarregar</span>
             </button>
-            <button class="btn btn-sm" id="btn-new-access" style="width: auto; display: flex; align-items: center; gap: 6px;">
+            <button class="btn btn-sm" id="btn-new-access"
+              style="width: auto; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
               <span>Novo Acesso</span>
             </button>
@@ -595,7 +624,8 @@
         <div class="crud-toolbar access-toolbar">
           <div class="crud-search-wrapper">
             <i data-lucide="search" class="filter-icon"></i>
-            <input type="text" id="crud-access-search-input" class="filter-input" placeholder="Buscar por nome ou número...">
+            <input type="text" id="crud-access-search-input" class="filter-input"
+              placeholder="Buscar por nome ou número...">
           </div>
 
           <div class="access-filters-group">
@@ -640,7 +670,8 @@
               </select>
             </div>
 
-            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-access-filters" title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-access-filters" title="Limpar Filtros"
+              style="display: flex; align-items: center; gap: 4px;">
               <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
               <span>Limpar</span>
             </button>
@@ -670,16 +701,20 @@
           <div class="pagination-controls access-pagination">
             <span class="pagination-info" id="access-pagination-info">Carregando paginação...</span>
             <div class="pagination-buttons">
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-access-page" title="Primeira Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-access-page" title="Primeira Página"
+                disabled>
                 <i data-lucide="chevrons-left"></i>
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-access-page" title="Página Anterior" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-access-page" title="Página Anterior"
+                disabled>
                 <i data-lucide="chevron-left"></i> Anterior
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-access-page" title="Próxima Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-access-page" title="Próxima Página"
+                disabled>
                 Próximo <i data-lucide="chevron-right"></i>
               </button>
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-access-page" title="Última Página" disabled>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-access-page" title="Última Página"
+                disabled>
                 <i data-lucide="chevrons-right"></i>
               </button>
             </div>
@@ -694,7 +729,8 @@
             <h2 class="crud-title">Histórico de Movimentações</h2>
             <span class="crud-subtitle">Últimas 20 movimentações de placas no sistema (retiradas e programações)</span>
           </div>
-          <button class="btn btn-sm btn-secondary" id="btn-refresh-movements" style="width: auto; display: flex; align-items: center; gap: 6px;">
+          <button class="btn btn-sm btn-secondary" id="btn-refresh-movements"
+            style="width: auto; display: flex; align-items: center; gap: 6px;">
             <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
             <span>Recarregar</span>
           </button>
@@ -712,7 +748,7 @@
           <!-- Rendered dynamically by app.js -->
         </div>
       </section>
-      
+
     </main>
   </section>
 
@@ -743,35 +779,42 @@
       <div class="modal-body">
         <form id="vehicle-form">
           <input type="hidden" id="vehicle-id">
-          
+
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="vehicle-placa">Placa Principal *</label>
-              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa" placeholder="ABC1234" required pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$" title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
+              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa" placeholder="ABC1234"
+                required pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$"
+                title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
             </div>
-            
+
             <div class="form-group">
               <label class="form-label" for="vehicle-placa2">Placa Reboque 1</label>
-              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa2" placeholder="ABC1234" pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$" title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
+              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa2"
+                placeholder="ABC1234" pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$"
+                title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
             </div>
-            
+
             <div class="form-group">
               <label class="form-label" for="vehicle-placa3">Placa Reboque 2</label>
-              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa3" placeholder="ABC1234" pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$" title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
+              <input class="form-input" style="padding-left: 12px;" type="text" id="vehicle-placa3"
+                placeholder="ABC1234" pattern="^[A-Za-z]{3}\d[A-Za-z0-9]\d{2}$"
+                title="Formato de placa inválido (ex: ABC1234 ou ABC1D23)">
             </div>
           </div>
-          
+
           <div class="form-group" style="margin-top: 1rem;">
             <label class="form-label" for="vehicle-cooperado-search">Cooperado *</label>
             <div class="searchable-select-wrapper">
-              <input type="text" class="form-input" style="padding-left: 12px;" id="vehicle-cooperado-search" placeholder="Pesquisar cooperado pelo nome ou código..." required autocomplete="off">
+              <input type="text" class="form-input" style="padding-left: 12px;" id="vehicle-cooperado-search"
+                placeholder="Pesquisar cooperado pelo nome ou código..." required autocomplete="off">
               <input type="hidden" id="vehicle-cooperado" required>
               <div class="searchable-select-dropdown" id="vehicle-cooperado-dropdown">
                 <!-- Dropdown items will be rendered here dynamically -->
               </div>
             </div>
           </div>
-          
+
           <div class="form-row" style="margin-top: 1rem;">
             <div class="form-group">
               <label class="form-label" for="vehicle-tipo">Tipo de Veículo *</label>
@@ -779,7 +822,7 @@
                 <option value="">Carregando tipos...</option>
               </select>
             </div>
-            
+
             <div class="form-group">
               <label class="form-label" for="vehicle-frota">Vínculo *</label>
               <select class="form-input" id="vehicle-frota" required>
@@ -788,9 +831,10 @@
               </select>
             </div>
           </div>
-          
+
           <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-vehicle" style="width: auto;">Cancelar</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-vehicle"
+              style="width: auto;">Cancelar</button>
             <button type="submit" class="btn btn-sm" id="btn-save-vehicle" style="width: auto;">Salvar</button>
           </div>
         </form>
@@ -810,23 +854,27 @@
       <div class="modal-body">
         <form id="cooperado-form">
           <input type="hidden" id="cooperado-id">
-          
+
           <div class="form-row">
             <div class="form-group" style="flex: 0 0 160px;">
               <label class="form-label" for="cooperado-codigo">Código</label>
-              <input class="form-input" style="padding-left: 12px;" type="text" id="cooperado-codigo" placeholder="Ex: 03.305.033/0001-38">
+              <input class="form-input" style="padding-left: 12px;" type="text" id="cooperado-codigo"
+                placeholder="Ex: 03.305.033/0001-38">
             </div>
             <div class="form-group" style="flex: 1;">
               <label class="form-label" for="cooperado-nome">Nome *</label>
-              <input class="form-input" style="padding-left: 12px;" type="text" id="cooperado-nome" placeholder="Nome Completo do Cooperado" required>
+              <input class="form-input" style="padding-left: 12px;" type="text" id="cooperado-nome"
+                placeholder="Nome Completo do Cooperado" required>
             </div>
           </div>
-          
+
           <div class="form-group" style="margin-top: 1.25rem;">
             <label class="form-label">IDs de Contato (Apenas letras e números) *</label>
             <div class="tags-input-wrapper">
               <div class="tags-input-row">
-                <input class="form-input" style="padding-left: 12px;" type="text" id="cooperado-contact-input" placeholder="Ex: 4799999999 ou user123" pattern="^[A-Za-z0-9]+$" title="Apenas caracteres alfanuméricos são permitidos (sem espaços, traços ou acentos)">
+                <input class="form-input" style="padding-left: 12px;" type="text" id="cooperado-contact-input"
+                  placeholder="Ex: 4799999999 ou user123" pattern="^[A-Za-z0-9]+$"
+                  title="Apenas caracteres alfanuméricos são permitidos (sem espaços, traços ou acentos)">
                 <button type="button" class="btn btn-sm" id="btn-add-contact-tag" style="width: auto; padding: 0 16px;">
                   <i data-lucide="plus"></i>
                 </button>
@@ -836,9 +884,10 @@
               </div>
             </div>
           </div>
-          
+
           <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-cooperado" style="width: auto;">Cancelar</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-cooperado"
+              style="width: auto;">Cancelar</button>
             <button type="submit" class="btn btn-sm" id="btn-save-cooperado" style="width: auto;">Salvar</button>
           </div>
         </form>
@@ -862,25 +911,32 @@
           <div class="form-group">
             <label class="form-label" for="access-id">ID / UUID do Contato *</label>
             <div style="display: flex; gap: 8px;">
-              <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.85rem;" type="text" id="access-id" placeholder="Ex: cbb379d2-be8d-4a55-a4ba-e9546469dd64" required pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" title="Formato UUID obrigatório: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-              <button type="button" class="btn btn-sm btn-secondary" id="btn-generate-uuid" title="Gerar novo UUID v4" style="white-space: nowrap; display: flex; align-items: center; gap: 4px; padding: 0 12px;">
+              <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.85rem;"
+                type="text" id="access-id" placeholder="Ex: cbb379d2-be8d-4a55-a4ba-e9546469dd64" required
+                pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                title="Formato UUID obrigatório: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-generate-uuid" title="Gerar novo UUID v4"
+                style="white-space: nowrap; display: flex; align-items: center; gap: 4px; padding: 0 12px;">
                 <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
                 <span>Gerar UUID</span>
               </button>
             </div>
-            <span id="access-id-hint" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">
+            <span id="access-id-hint"
+              style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">
               Insira o código UUID manualmente ou clique em "Gerar UUID"
             </span>
           </div>
 
           <div class="form-group" style="margin-top: 1.25rem;">
             <label class="form-label" for="access-nome">Nome *</label>
-            <input class="form-input" style="padding-left: 12px;" type="text" id="access-nome" placeholder="Nome completo do usuário ou motorista" required>
+            <input class="form-input" style="padding-left: 12px;" type="text" id="access-nome"
+              placeholder="Nome completo do usuário ou motorista" required>
           </div>
 
           <div class="form-group" style="margin-top: 1.25rem;">
             <label class="form-label" for="access-empresa">Empresa</label>
-            <input class="form-input" style="padding-left: 12px;" type="text" id="access-empresa" placeholder="Ex: Cootravale, Transportadora ABC...">
+            <input class="form-input" style="padding-left: 12px;" type="text" id="access-empresa"
+              placeholder="Ex: Cootravale, Transportadora ABC...">
             <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">
               Empresa ou cooperativa à qual o contato pertence
             </span>
@@ -888,7 +944,8 @@
 
           <div class="form-group" style="margin-top: 1.25rem;">
             <label class="form-label" for="access-numero">Número / Contato Digisac</label>
-            <input class="form-input" style="padding-left: 12px;" type="text" id="access-numero" placeholder="Ex: 5547999999999 ou (47) 99999-9999">
+            <input class="form-input" style="padding-left: 12px;" type="text" id="access-numero"
+              placeholder="Ex: 5547999999999 ou (47) 99999-9999">
             <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">
               Identificador telefônico ou ID do contato no Digisac
             </span>
@@ -913,7 +970,8 @@
           </div>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-access" style="width: auto;">Cancelar</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-access"
+              style="width: auto;">Cancelar</button>
             <button type="submit" class="btn btn-sm" id="btn-save-access" style="width: auto;">Salvar Acesso</button>
           </div>
         </form>
@@ -940,21 +998,25 @@
       </div>
 
       <div class="modal-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
-        
+
         <!-- Search & Add Section -->
-        <div style="background: rgba(0, 0, 0, 0.15); border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem;">
+        <div
+          style="background: rgba(0, 0, 0, 0.15); border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem;">
           <label class="form-label" style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 6px;">
             <i data-lucide="user-plus" style="width: 14px; height: 14px; color: var(--accent);"></i>
             <span>Adicionar Cooperado à Lista</span>
           </label>
-          
+
           <div style="display: flex; gap: 8px; align-items: center;">
             <div class="searchable-select-wrapper" style="flex: 1;">
-              <input type="text" id="link-cooperado-search-input" class="form-input" style="padding-left: 12px;" placeholder="Digite para buscar cooperado disponível..." autocomplete="off">
+              <input type="text" id="link-cooperado-search-input" class="form-input" style="padding-left: 12px;"
+                placeholder="Digite para buscar cooperado disponível..." autocomplete="off">
               <input type="hidden" id="link-cooperado-selected-id">
               <div class="searchable-select-dropdown" id="link-cooperado-dropdown"></div>
             </div>
-            <button type="button" class="btn btn-sm" id="btn-add-cooperado-link" style="padding: 10px 16px; width: auto; white-space: nowrap; display: flex; align-items: center; gap: 6px;" disabled>
+            <button type="button" class="btn btn-sm" id="btn-add-cooperado-link"
+              style="padding: 10px 16px; width: auto; white-space: nowrap; display: flex; align-items: center; gap: 6px;"
+              disabled>
               <i data-lucide="plus" style="width: 15px; height: 15px;"></i>
               <span>Adicionar</span>
             </button>
@@ -967,29 +1029,36 @@
         <!-- Currently Linked Cooperados Section -->
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-            <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+            <h4
+              style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
               <i data-lucide="check-circle-2" style="width: 15px; height: 15px; color: var(--accent);"></i>
               <span>Cooperados Vinculados</span>
             </h4>
-            <span class="badge-status active" id="link-cooperados-count-badge" style="cursor: default;">0 selecionados</span>
+            <span class="badge-status active" id="link-cooperados-count-badge" style="cursor: default;">0
+              selecionados</span>
           </div>
 
           <!-- Linked list container -->
-          <div id="link-cooperados-list-container" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+          <div id="link-cooperados-list-container"
+            style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
             <!-- Rendered dynamically -->
           </div>
         </div>
 
         <!-- Modal Footer Actions -->
-        <div style="margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-all-cooperado-links" style="width: auto; color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">
+        <div
+          style="margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-all-cooperado-links"
+            style="width: auto; color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">
             <i data-lucide="trash" style="width: 13px; height: 13px;"></i>
             <span>Desvincular Todos</span>
           </button>
-          
+
           <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-link-cooperados" style="width: auto;">Cancelar</button>
-            <button type="button" class="btn btn-sm" id="btn-save-link-cooperados" style="width: auto; display: flex; align-items: center; gap: 6px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-link-cooperados"
+              style="width: auto;">Cancelar</button>
+            <button type="button" class="btn btn-sm" id="btn-save-link-cooperados"
+              style="width: auto; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="save" style="width: 14px; height: 14px;"></i>
               <span>Salvar Vínculos</span>
             </button>
@@ -1003,4 +1072,5 @@
   <!-- Main JavaScript File -->
   <script src="app.js?v=1.1.0"></script>
 </body>
+
 </html>
