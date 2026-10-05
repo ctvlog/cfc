@@ -957,6 +957,13 @@ function updateStats() {
   els.statTotalRecusas.textContent = totalRecusas;
 }
 
+// HELPER: VERIFICA SE O VEÍCULO ESTÁ EM CRÍTICA (emCritica)
+function isEmCritica(vehicle) {
+  if (!vehicle) return false;
+  const val = vehicle.emCritica !== undefined ? vehicle.emCritica : vehicle.em_critica;
+  return val === true || val === "true" || val === 1 || val === "1" || val === "S" || val === "s" || val === "sim" || val === "SIM";
+}
+
 // RENDERING SKELETONS (LOADING VIEW)
 function renderSkeletons() {
   els.queuesViewport.innerHTML = "";
@@ -979,6 +986,7 @@ function renderSkeletons() {
               <th>Veículo / Cooperado</th>
               <th style="width: 70px;">Vínculo</th>
               <th style="width: 48px; text-align: center;">Rec.</th>
+              <th style="width: 48px; text-align: center;" title="Em Crítica">Crítica</th>
             </tr>
           </thead>
           <tbody>
@@ -992,6 +1000,7 @@ function renderSkeletons() {
                 </td>
                 <td><div class="skeleton sk-frota"></div></td>
                 <td><div class="skeleton sk-rec"></div></td>
+                <td><div class="skeleton sk-critica"></div></td>
               </tr>
             `).join("")}
           </tbody>
@@ -1052,6 +1061,7 @@ function renderQueuesGrid() {
           <th class="vehicle-cell">Veículo / Cooperado</th>
           <th>Vínculo</th>
           <th class="recusa-cell">Rec.</th>
+          <th class="critica-cell" title="Em Crítica">Crítica</th>
         </tr>
       </thead>
     `;
@@ -1061,7 +1071,7 @@ function renderQueuesGrid() {
     if (vehicles.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5">
+          <td colspan="6">
             <div class="empty-queue">
               <i data-lucide="truck"></i>
               <div class="empty-queue-text">Fila vazia</div>
@@ -1142,6 +1152,17 @@ function renderQueuesGrid() {
           recCell.innerHTML = `<span style="color:var(--text-muted); opacity: 0.3;">-</span>`;
         }
         row.appendChild(recCell);
+
+        // Status Em Crítica cell (coluna após o contador de recusas)
+        const criticaCell = document.createElement("td");
+        criticaCell.className = "critica-cell";
+        const isCritica = isEmCritica(vehicle);
+        criticaCell.innerHTML = `
+          <span class="critica-indicator ${isCritica ? 'critica-true' : 'critica-false'}" title="${isCritica ? 'Em Crítica: Sim' : 'Em Crítica: Não'}">
+            <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+          </span>
+        `;
+        row.appendChild(criticaCell);
 
         tbody.appendChild(row);
       });

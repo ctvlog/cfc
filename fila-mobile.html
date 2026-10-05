@@ -813,6 +813,8 @@
       align-items: center;
       gap: 4px;
       flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .badge-frota {
@@ -857,6 +859,71 @@
       transform: scale(0.92);
       background: var(--danger);
       color: #ffffff;
+    }
+
+    /* Status Em Crítica */
+    .critica-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      vertical-align: middle;
+      transition: all 0.2s ease;
+    }
+
+    .critica-indicator.critica-true {
+      color: #10b981; /* Verde */
+    }
+
+    .critica-indicator.critica-false {
+      color: #cbd5e1; /* Cinza claro */
+      opacity: 0.45;
+    }
+
+    [data-theme="light"] .critica-indicator.critica-true {
+      color: #059669;
+    }
+
+    [data-theme="light"] .critica-indicator.critica-false {
+      color: #94a3b8;
+      opacity: 0.65;
+    }
+
+    .badge-critica-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 6px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .badge-critica-btn.critica-true {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+    }
+
+    .badge-critica-btn.critica-false {
+      background: rgba(148, 163, 184, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
+      opacity: 0.55;
+    }
+
+    [data-theme="light"] .badge-critica-btn.critica-true {
+      background: rgba(5, 150, 105, 0.1);
+      border-color: rgba(5, 150, 105, 0.25);
+      color: #059669;
+    }
+
+    [data-theme="light"] .badge-critica-btn.critica-false {
+      background: rgba(148, 163, 184, 0.12);
+      border-color: rgba(148, 163, 184, 0.25);
+      color: #94a3b8;
+      opacity: 0.75;
     }
 
     /* Card Details Row */
@@ -1759,6 +1826,13 @@
       return cleaned;
     }
 
+    // Helper: Verifica se o veículo está em crítica (emCritica)
+    function isEmCritica(vehicle) {
+      if (!vehicle) return false;
+      const val = vehicle.emCritica !== undefined ? vehicle.emCritica : vehicle.em_critica;
+      return val === true || val === "true" || val === 1 || val === "1" || val === "S" || val === "s" || val === "sim" || val === "SIM";
+    }
+
     // ==========================================================================
     // THEME HANDLING
     // ==========================================================================
@@ -2106,6 +2180,13 @@
               </button>
             ` : "";
 
+            const isCritica = isEmCritica(vehicle);
+            const criticaBadgeHTML = `
+              <span class="badge-critica-btn ${isCritica ? 'critica-true' : 'critica-false'}" title="${isCritica ? 'Em Crítica: Sim' : 'Em Crítica: Não'}">
+                <i data-lucide="alert-circle" style="width: 13px; height: 13px;"></i>
+              </span>
+            `;
+
             const leadBannerHTML = isLead ? `
               <div class="lead-banner">
                 <div class="lead-banner-left">
@@ -2139,6 +2220,7 @@
                     </span>
                   `}
                   ${recusaBtnHTML}
+                  ${criticaBadgeHTML}
                 </div>
               </div>
 
@@ -2185,6 +2267,7 @@
           vehicles.forEach((vehicle, idx) => {
             const isLead = (idx === 0);
             const recCount = vehicle.recusas && Array.isArray(vehicle.recusas) ? vehicle.recusas.length : 0;
+            const isCritica = isEmCritica(vehicle);
 
             tableRowsHTML += `
               <tr class="${isLead ? 'lead-row' : ''}">
@@ -2211,6 +2294,11 @@
                     </button>
                   ` : `<span style="opacity: 0.3;">-</span>`}
                 </td>
+                <td style="text-align: center; width: 44px;">
+                  <span class="critica-indicator ${isCritica ? 'critica-true' : 'critica-false'}" title="${isCritica ? 'Em Crítica: Sim' : 'Em Crítica: Não'}">
+                    <i data-lucide="alert-circle" style="width: 15px; height: 15px;"></i>
+                  </span>
+                </td>
               </tr>
             `;
           });
@@ -2224,6 +2312,7 @@
                   <th>Veículo / Cooperado</th>
                   <th>Tempo</th>
                   <th style="text-align: center;">Rec.</th>
+                  <th style="text-align: center; width: 44px;" title="Em Crítica">Crítica</th>
                 </tr>
               </thead>
               <tbody>
