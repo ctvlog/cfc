@@ -7,7 +7,7 @@
   <title>Central de Fretes Cootravale</title>
 
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.0.7">
+  <link rel="stylesheet" href="style.css?v=1.1.0">
 
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -108,6 +108,10 @@
               <i data-lucide="shield-check"></i>
               <span>Controle de Acessos</span>
             </button>
+            <button class="nav-item" id="nav-btn-profiles">
+              <i data-lucide="user-cog"></i>
+              <span>Perfis de Usuários</span>
+            </button>
           </div>
         </div>
 
@@ -191,7 +195,7 @@
           </button>
           <div class="header-title-container">
             <h2 class="header-title">Filas de Carregamento</h2>
-            <span class="header-subtitle">Central de Fretes | v1.03</span>
+            <span class="header-subtitle">Central de Fretes | v1.04</span>
           </div>
         </div>
 
@@ -722,6 +726,108 @@
         </div>
       </section>
 
+      <!-- PROFILES (USER PROFILES) VIEWPORT (Admin Exclusivo) -->
+      <section class="crud-container hidden" id="profiles-crud-section">
+        <div class="crud-header">
+          <div class="crud-title-area">
+            <h2 class="crud-title">Cadastro de Perfis (Profiles)</h2>
+            <span class="crud-subtitle">Acesso exclusivo de Administrador • Alteração restrita ao campo ID de Contato</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-profiles"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+              <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+              <span>Recarregar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Summary Metrics Bar -->
+        <div class="access-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue"><i data-lucide="users"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-profiles-total">0</span>
+              <span class="metric-label">Total de Perfis</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon green"><i data-lucide="shield-check"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-profiles-admins">0</span>
+              <span class="metric-label">Administradores</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="link"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-profiles-linked">0</span>
+              <span class="metric-label">Com ID Contato</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon orange"><i data-lucide="link-2-off"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-profiles-unlinked">0</span>
+              <span class="metric-label">Sem ID Contato</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters & Toolbar -->
+        <div class="crud-toolbar access-toolbar">
+          <div class="crud-search-wrapper">
+            <i data-lucide="search" class="filter-icon"></i>
+            <input type="text" id="crud-profiles-search-input" class="filter-input"
+              placeholder="Buscar por e-mail, função ou ID Contato...">
+          </div>
+
+          <div class="access-filters-group">
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-profiles-role-filter">Função:</label>
+              <select id="crud-profiles-role-filter" class="filter-select">
+                <option value="all">Todas as Funções</option>
+                <option value="admin">Administrador</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-profiles-link-filter">ID Contato:</label>
+              <select id="crud-profiles-link-filter" class="filter-select">
+                <option value="all">Todos</option>
+                <option value="linked">Com ID Contato</option>
+                <option value="unlinked">Sem ID Contato</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-profiles-filters" title="Limpar Filtros"
+              style="display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Wrapper -->
+        <div class="crud-table-wrapper">
+          <table class="crud-table">
+            <thead>
+              <tr>
+                <th>Usuário / E-mail</th>
+                <th style="width: 150px; text-align: center;">Função (Role)</th>
+                <th>ID Contato (Digisac)</th>
+                <th style="width: 160px;">Data de Cadastro</th>
+                <th style="width: 130px; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="crud-profiles-tbody">
+              <!-- Rendered dynamically by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- Movements Timeline Viewport (Initially Hidden) -->
       <section class="crud-container hidden" id="movements-timeline-section">
         <div class="crud-header">
@@ -1069,8 +1175,73 @@
     </div>
   </div>
 
+  <!-- PROFILES EDIT ID_CONTATO MODAL -->
+  <div class="modal-backdrop" id="profile-modal-backdrop">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="logo-icon" style="width: 36px; height: 36px; border-radius: 8px;">
+            <i data-lucide="user-cog" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title" id="profile-modal-title">Editar ID de Contato</h3>
+            <span class="crud-subtitle">Tabela public.profiles</span>
+          </div>
+        </div>
+        <button class="modal-close" id="profile-modal-close" type="button">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="profile-form">
+          <input type="hidden" id="profile-edit-id">
+
+          <div class="form-group">
+            <label class="form-label">E-mail do Usuário</label>
+            <input class="form-input" style="padding-left: 12px; background: rgba(0,0,0,0.06); cursor: not-allowed;"
+              type="text" id="profile-edit-email" readonly disabled>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label">Função / Papel (Role)</label>
+            <input class="form-input" style="padding-left: 12px; background: rgba(0,0,0,0.06); cursor: not-allowed;"
+              type="text" id="profile-edit-role" readonly disabled>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label">UUID do Registro</label>
+            <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.06); cursor: not-allowed;"
+              type="text" id="profile-edit-uuid" readonly disabled>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label" for="profile-edit-id-contato" style="display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="key" style="width: 13px; height: 13px; color: var(--accent);"></i>
+              <span>ID de Contato (id_contato) *</span>
+            </label>
+            <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.85rem;"
+              type="text" id="profile-edit-id-contato" placeholder="Ex: 0c20c71a-eec6-462e-a394-82e1f759c...">
+            <span style="font-size: 0.74rem; color: var(--text-muted); display: block; margin-top: 6px; line-height: 1.4;">
+              💡 <strong>Regra de Negócio:</strong> Este é o <strong>único campo editável</strong> na tabela de perfis. Deixe em branco caso deseje desvincular.
+            </span>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-profile"
+              style="width: auto;">Cancelar</button>
+            <button type="submit" class="btn btn-sm" id="btn-save-profile" style="width: auto; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+              <span>Salvar ID de Contato</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Main JavaScript File -->
-  <script src="app.js?v=1.1.1"></script>
+  <script src="app.js?v=1.1.5"></script>
 </body>
 
 </html>

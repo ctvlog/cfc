@@ -21,6 +21,10 @@ let appState = {
     vehicleType: "",
     frota: "all"
   },
+  profiles: [],
+  profilesSearch: "",
+  profilesRoleFilter: "all",
+  profilesLinkFilter: "all",
   theme: "dark",
   sidebarCollapsed: false,
   autoRefresh: {
@@ -245,7 +249,32 @@ const els = {
   linkCooperadosListContainer: document.getElementById("link-cooperados-list-container"),
   btnClearAllCooperadoLinks: document.getElementById("btn-clear-all-cooperado-links"),
   btnCancelLinkCooperados: document.getElementById("btn-cancel-link-cooperados"),
-  btnSaveLinkCooperados: document.getElementById("btn-save-link-cooperados")
+  btnSaveLinkCooperados: document.getElementById("btn-save-link-cooperados"),
+
+  // Profiles Management Elements
+  navBtnProfiles: document.getElementById("nav-btn-profiles"),
+  profilesCrudSection: document.getElementById("profiles-crud-section"),
+  btnRefreshProfiles: document.getElementById("btn-refresh-profiles"),
+  statProfilesTotal: document.getElementById("stat-profiles-total"),
+  statProfilesAdmins: document.getElementById("stat-profiles-admins"),
+  statProfilesLinked: document.getElementById("stat-profiles-linked"),
+  statProfilesUnlinked: document.getElementById("stat-profiles-unlinked"),
+  crudProfilesSearchInput: document.getElementById("crud-profiles-search-input"),
+  crudProfilesRoleFilter: document.getElementById("crud-profiles-role-filter"),
+  crudProfilesLinkFilter: document.getElementById("crud-profiles-link-filter"),
+  btnResetProfilesFilters: document.getElementById("btn-reset-profiles-filters"),
+  crudProfilesTbody: document.getElementById("crud-profiles-tbody"),
+  profileModalBackdrop: document.getElementById("profile-modal-backdrop"),
+  profileModalTitle: document.getElementById("profile-modal-title"),
+  profileModalClose: document.getElementById("profile-modal-close"),
+  profileForm: document.getElementById("profile-form"),
+  profileEditId: document.getElementById("profile-edit-id"),
+  profileEditEmail: document.getElementById("profile-edit-email"),
+  profileEditRole: document.getElementById("profile-edit-role"),
+  profileEditUuid: document.getElementById("profile-edit-uuid"),
+  profileEditIdContato: document.getElementById("profile-edit-id-contato"),
+  btnCancelProfile: document.getElementById("btn-cancel-profile"),
+  btnSaveProfile: document.getElementById("btn-save-profile")
 };
 
 // TOAST SYSTEM
@@ -415,6 +444,7 @@ async function handleSignIn(user) {
       els.navBtnVehicles.classList.remove("hidden");
       els.navBtnCooperados.classList.remove("hidden");
       els.navBtnAccess.classList.remove("hidden");
+      if (els.navBtnProfiles) els.navBtnProfiles.classList.remove("hidden");
       loadAdminAuxiliaryData();
     } else {
       appState.isAdmin = false;
@@ -423,6 +453,7 @@ async function handleSignIn(user) {
       els.navBtnVehicles.classList.add("hidden");
       els.navBtnCooperados.classList.add("hidden");
       els.navBtnAccess.classList.add("hidden");
+      if (els.navBtnProfiles) els.navBtnProfiles.classList.add("hidden");
       switchView("queues");
     }
   } catch (err) {
@@ -433,12 +464,20 @@ async function handleSignIn(user) {
     els.navBtnVehicles.classList.add("hidden");
     els.navBtnCooperados.classList.add("hidden");
     els.navBtnAccess.classList.add("hidden");
+    if (els.navBtnProfiles) els.navBtnProfiles.classList.add("hidden");
     switchView("queues");
   }
 
-  // Load data
-  loadQueuesData(true);
-  startAutoRefresh();
+  // Check if redirected with specific view in sessionStorage
+  const gotoView = sessionStorage.getItem("cfc_goto_view");
+  if (gotoView && appState.isAdmin) {
+    sessionStorage.removeItem("cfc_goto_view");
+    switchView(gotoView);
+  } else {
+    // Load data
+    loadQueuesData(true);
+    startAutoRefresh();
+  }
 }
 
 function handleSignOut() {
@@ -809,6 +848,51 @@ function setupEventListeners() {
     });
   }
 
+  // Profiles Management Event Listeners
+  if (els.navBtnProfiles) els.navBtnProfiles.addEventListener("click", () => switchView("profiles"));
+  if (els.btnRefreshProfiles) els.btnRefreshProfiles.addEventListener("click", () => loadProfilesData(true));
+  if (els.profileModalClose) els.profileModalClose.addEventListener("click", closeProfileModal);
+  if (els.btnCancelProfile) els.btnCancelProfile.addEventListener("click", closeProfileModal);
+  if (els.profileModalBackdrop) {
+    els.profileModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === els.profileModalBackdrop) closeProfileModal();
+    });
+  }
+  if (els.profileForm) els.profileForm.addEventListener("submit", handleSaveProfile);
+
+  if (els.crudProfilesSearchInput) {
+    els.crudProfilesSearchInput.addEventListener("input", debounce((e) => {
+      appState.profilesSearch = e.target.value.trim();
+      renderProfilesTable();
+    }, 250));
+  }
+
+  if (els.crudProfilesRoleFilter) {
+    els.crudProfilesRoleFilter.addEventListener("change", (e) => {
+      appState.profilesRoleFilter = e.target.value;
+      renderProfilesTable();
+    });
+  }
+
+  if (els.crudProfilesLinkFilter) {
+    els.crudProfilesLinkFilter.addEventListener("change", (e) => {
+      appState.profilesLinkFilter = e.target.value;
+      renderProfilesTable();
+    });
+  }
+
+  if (els.btnResetProfilesFilters) {
+    els.btnResetProfilesFilters.addEventListener("click", () => {
+      appState.profilesSearch = "";
+      appState.profilesRoleFilter = "all";
+      appState.profilesLinkFilter = "all";
+      if (els.crudProfilesSearchInput) els.crudProfilesSearchInput.value = "";
+      if (els.crudProfilesRoleFilter) els.crudProfilesRoleFilter.value = "all";
+      if (els.crudProfilesLinkFilter) els.crudProfilesLinkFilter.value = "all";
+      renderProfilesTable();
+    });
+  }
+
   // ESC key to close modal
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -817,6 +901,7 @@ function setupEventListeners() {
       closeCooperadoModal();
       closeAccessModal();
       closeLinkCooperadosModal();
+      closeProfileModal();
     }
   });
 }
@@ -981,12 +1066,12 @@ function renderSkeletons() {
         <table class="queue-table">
           <thead>
             <tr>
-              <th style="width: 32px;">Pos</th>
-              <th style="width: 110px;">Placas</th>
-              <th>Veículo / Cooperado</th>
-              <th style="width: 70px;">Vínculo</th>
-              <th style="width: 48px; text-align: center;">Rec.</th>
-              <th style="width: 48px; text-align: center;" title="Em Crítica">Crítica</th>
+              <th class="pos-cell">Pos</th>
+              <th class="plate-cell">Placas</th>
+              <th class="vehicle-cell">Veículo / Cooperado</th>
+              <th class="vinculo-cell">Vínculo</th>
+              <th class="recusa-cell">Rec.</th>
+              <th class="critica-cell" title="Em Crítica">Crítica</th>
             </tr>
           </thead>
           <tbody>
@@ -1059,7 +1144,7 @@ function renderQueuesGrid() {
           <th class="pos-cell">Pos</th>
           <th class="plate-cell">Placas</th>
           <th class="vehicle-cell">Veículo / Cooperado</th>
-          <th>Vínculo</th>
+          <th class="vinculo-cell">Vínculo</th>
           <th class="recusa-cell">Rec.</th>
           <th class="critica-cell" title="Em Crítica">Crítica</th>
         </tr>
@@ -1125,10 +1210,11 @@ function renderQueuesGrid() {
 
         // Frota status
         const fCell = document.createElement("td");
+        fCell.className = "vinculo-cell";
         if (vehicle.frota) {
           fCell.innerHTML = `<span class="frota-badge frota" title="Frota própria da Cootravale"><i data-lucide="shield-check" style="width:10px;height:10px;"></i> Frota</span>`;
         } else {
-          fCell.innerHTML = `<span class="frota-badge terceiro" title="Veículo Terceirizado"><i data-lucide="user" style="width:10px;height:10px;"></i> Terceiro</span>`;
+          fCell.innerHTML = `<span class="frota-badge terceiro" title="Veículo Não Frota"><i data-lucide="user" style="width:10px;height:10px;"></i> Não Frota</span>`;
         }
         row.appendChild(fCell);
 
@@ -1310,7 +1396,7 @@ function updateAutoRefreshUI() {
 // ==========================================
 
 function switchView(view) {
-  if ((view === "vehicles" || view === "cooperados" || view === "access") && !appState.isAdmin) {
+  if ((view === "vehicles" || view === "cooperados" || view === "access" || view === "profiles") && !appState.isAdmin) {
     Toast.show("Acesso Negado", "Apenas administradores possuem este acesso.", "error");
     return;
   }
@@ -1323,6 +1409,7 @@ function switchView(view) {
   els.vehiclesCrudSection.classList.add("hidden");
   els.cooperadosCrudSection.classList.add("hidden");
   els.accessCrudSection.classList.add("hidden");
+  if (els.profilesCrudSection) els.profilesCrudSection.classList.add("hidden");
   els.movementsTimelineSection.classList.add("hidden");
   if (controlBar) controlBar.classList.add("hidden");
 
@@ -1332,6 +1419,7 @@ function switchView(view) {
   els.navBtnVehicles.classList.remove("active");
   els.navBtnCooperados.classList.remove("active");
   els.navBtnAccess.classList.remove("active");
+  if (els.navBtnProfiles) els.navBtnProfiles.classList.remove("active");
 
   if (view === "vehicles") {
     els.vehiclesCrudSection.classList.remove("hidden");
@@ -1360,6 +1448,15 @@ function switchView(view) {
     els.refreshIndicatorDot.className = "indicator-dot inactive";
 
     loadAccessData(true);
+  } else if (view === "profiles") {
+    if (els.profilesCrudSection) els.profilesCrudSection.classList.remove("hidden");
+    if (els.navBtnProfiles) els.navBtnProfiles.classList.add("active");
+
+    stopAutoRefresh();
+    els.refreshCountdownText.textContent = "Atualização pausada";
+    els.refreshIndicatorDot.className = "indicator-dot inactive";
+
+    loadProfilesData(true);
   } else if (view === "movements") {
     els.movementsTimelineSection.classList.remove("hidden");
     els.navBtnMovements.classList.add("active");
@@ -1586,7 +1683,7 @@ function renderVehiclesTable() {
     if (v.frota) {
       tdVinculo.innerHTML = `<span class="frota-badge frota"><i data-lucide="shield-check" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Frota</span>`;
     } else {
-      tdVinculo.innerHTML = `<span class="frota-badge terceiro"><i data-lucide="user" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Terceiro</span>`;
+      tdVinculo.innerHTML = `<span class="frota-badge terceiro"><i data-lucide="user" style="width:10px;height:10px;display:inline-block;vertical-align:middle;"></i> Não Frota</span>`;
     }
     row.appendChild(tdVinculo);
 
@@ -3583,6 +3680,303 @@ function populateMovementQueueFilter(movementsData, columnName) {
 
   if (sortedQueues.includes(currentVal)) {
     els.movementQueueFilter.value = currentVal;
+  }
+}
+
+// ==========================================
+// PROFILES (PUBLIC.PROFILES) CRUD - ADMIN EXCLUSIVE
+// ==========================================
+
+function escapeHTML(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function loadProfilesData(fetchStats = false) {
+  if (!appState.isAdmin) return;
+
+  if (els.crudProfilesTbody) {
+    els.crudProfilesTbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 2.5rem;">
+          <div class="spinner" style="margin: 0 auto 10px auto; border-top-color: var(--accent);"></div>
+          <span style="color: var(--text-muted); font-size: 0.85rem;">Carregando tabela profiles...</span>
+        </td>
+      </tr>
+    `;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    appState.profiles = data || [];
+
+    if (fetchStats) {
+      updateProfilesStats(appState.profiles);
+    }
+
+    renderProfilesTable();
+  } catch (err) {
+    console.error("Erro ao carregar profiles:", err);
+    if (els.crudProfilesTbody) {
+      els.crudProfilesTbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 2rem; color: var(--danger);">
+            <i data-lucide="alert-circle" style="display:inline-block; margin-bottom: 6px;"></i>
+            <div>Falha ao carregar perfis: ${escapeHTML(err.message || "Erro desconhecido")}</div>
+          </td>
+        </tr>
+      `;
+      lucide.createIcons();
+    }
+    Toast.show("Erro ao carregar", "Não foi possível buscar os perfis da base de dados.", "error");
+  }
+}
+
+function updateProfilesStats(profiles) {
+  const total = profiles.length;
+  const admins = profiles.filter(p => p.role === "admin").length;
+  const linked = profiles.filter(p => p.id_contato && p.id_contato.trim() !== "").length;
+  const unlinked = total - linked;
+
+  if (els.statProfilesTotal) els.statProfilesTotal.textContent = total;
+  if (els.statProfilesAdmins) els.statProfilesAdmins.textContent = admins;
+  if (els.statProfilesLinked) els.statProfilesLinked.textContent = linked;
+  if (els.statProfilesUnlinked) els.statProfilesUnlinked.textContent = unlinked;
+}
+
+function renderProfilesTable() {
+  if (!els.crudProfilesTbody) return;
+
+  const search = (appState.profilesSearch || "").toLowerCase();
+  const roleFilter = appState.profilesRoleFilter || "all";
+  const linkFilter = appState.profilesLinkFilter || "all";
+
+  const filtered = (appState.profiles || []).filter(p => {
+    // Search
+    const emailMatch = p.email && p.email.toLowerCase().includes(search);
+    const roleMatch = p.role && p.role.toLowerCase().includes(search);
+    const contatoMatch = p.id_contato && p.id_contato.toLowerCase().includes(search);
+    const idMatch = p.id && p.id.toLowerCase().includes(search);
+    const matchesSearch = !search || emailMatch || roleMatch || contatoMatch || idMatch;
+
+    // Role
+    const matchesRole = roleFilter === "all" || p.role === roleFilter;
+
+    // Link
+    const hasContact = p.id_contato && p.id_contato.trim() !== "";
+    const matchesLink = linkFilter === "all" ||
+      (linkFilter === "linked" && hasContact) ||
+      (linkFilter === "unlinked" && !hasContact);
+
+    return matchesSearch && matchesRole && matchesLink;
+  });
+
+  if (filtered.length === 0) {
+    els.crudProfilesTbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 2.5rem;">
+          <div class="empty-queue">
+            <i data-lucide="user-x"></i>
+            <div class="empty-queue-text">Nenhum perfil encontrado com os filtros selecionados.</div>
+          </div>
+        </td>
+      </tr>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  els.crudProfilesTbody.innerHTML = "";
+
+  filtered.forEach(p => {
+    const tr = document.createElement("tr");
+
+    // Email / User
+    const tdEmail = document.createElement("td");
+    tdEmail.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent-bg-glow); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;">
+          <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+        </div>
+        <div>
+          <div style="font-weight: 600; color: var(--text-primary); font-size: 0.82rem;">${escapeHTML(p.email || "Sem e-mail")}</div>
+          <div style="font-size: 0.68rem; color: var(--text-muted); font-family: monospace;" title="UUID: ${p.id}">
+            ${p.id ? p.id.substring(0, 13) + '...' : '-'}
+          </div>
+        </div>
+      </div>
+    `;
+    tr.appendChild(tdEmail);
+
+    // Role
+    const tdRole = document.createElement("td");
+    tdRole.style.textAlign = "center";
+    const isAdmin = p.role === "admin";
+    tdRole.innerHTML = `
+      <span class="frota-badge ${isAdmin ? 'frota' : 'terceiro'}" style="font-size: 0.72rem; padding: 3px 8px;">
+        <i data-lucide="${isAdmin ? 'shield-check' : 'user'}" style="width: 11px; height: 11px;"></i>
+        ${isAdmin ? 'Administrador' : (p.role ? escapeHTML(p.role) : 'Viewer')}
+      </span>
+    `;
+    tr.appendChild(tdRole);
+
+    // ID Contato (The only editable field)
+    const tdContato = document.createElement("td");
+    if (p.id_contato && p.id_contato.trim()) {
+      const escapedContato = escapeHTML(p.id_contato);
+      tdContato.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <code style="background: rgba(0,0,0,0.06); padding: 2px 7px; border-radius: 4px; font-size: 0.78rem; color: var(--accent); border: 1px solid var(--border-color); font-family: monospace;">
+            ${escapedContato}
+          </code>
+          <button type="button" class="btn-icon-subtle" title="Copiar ID de Contato" data-clipboard="${escapedContato}">
+            <i data-lucide="copy" style="width: 13px; height: 13px;"></i>
+          </button>
+        </div>
+      `;
+      const copyBtn = tdContato.querySelector("button[data-clipboard]");
+      if (copyBtn) {
+        copyBtn.addEventListener("click", () => {
+          navigator.clipboard.writeText(p.id_contato);
+          Toast.show("Copiado", "ID de Contato copiado para a área de transferência.", "success");
+        });
+      }
+    } else {
+      tdContato.innerHTML = `<span style="color: var(--text-muted); font-size: 0.78rem; opacity: 0.6; font-style: italic;">Não informado</span>`;
+    }
+    tr.appendChild(tdContato);
+
+    // Created At
+    const tdCreated = document.createElement("td");
+    tdCreated.style.fontSize = "0.78rem";
+    tdCreated.style.color = "var(--text-muted)";
+    tdCreated.textContent = p.created_at ? formatDateTime(p.created_at) : "-";
+    tr.appendChild(tdCreated);
+
+    // Actions
+    const tdActions = document.createElement("td");
+    tdActions.style.textAlign = "center";
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "btn btn-sm btn-secondary";
+    editBtn.style.padding = "4px 8px";
+    editBtn.style.display = "inline-flex";
+    editBtn.style.alignItems = "center";
+    editBtn.style.gap = "4px";
+    editBtn.style.cursor = "pointer";
+    editBtn.title = "Alterar ID de Contato";
+    editBtn.innerHTML = `<i data-lucide="pencil" style="width: 13px; height: 13px; pointer-events: none;"></i> <span style="pointer-events: none;">Editar</span>`;
+    editBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openProfileModal(p);
+    });
+    tdActions.appendChild(editBtn);
+    tr.appendChild(tdActions);
+
+    els.crudProfilesTbody.appendChild(tr);
+  });
+
+  lucide.createIcons();
+}
+
+function openProfileModal(profile) {
+  const modal = els.profileModalBackdrop || document.getElementById("profile-modal-backdrop");
+  if (!modal) return;
+  const editId = els.profileEditId || document.getElementById("profile-edit-id");
+  const editEmail = els.profileEditEmail || document.getElementById("profile-edit-email");
+  const editRole = els.profileEditRole || document.getElementById("profile-edit-role");
+  const editUuid = els.profileEditUuid || document.getElementById("profile-edit-uuid");
+  const editIdContato = els.profileEditIdContato || document.getElementById("profile-edit-id-contato");
+
+  if (editId) editId.value = profile.id || "";
+  if (editEmail) editEmail.value = profile.email || "";
+  if (editRole) editRole.value = profile.role === "admin" ? "Administrador (admin)" : (profile.role || "Viewer");
+  if (editUuid) editUuid.value = profile.id || "";
+  if (editIdContato) editIdContato.value = profile.id_contato || "";
+
+  modal.classList.add("show");
+  modal.classList.add("active");
+  modal.style.display = "flex";
+  modal.style.opacity = "1";
+  modal.style.visibility = "visible";
+  modal.style.pointerEvents = "auto";
+
+  setTimeout(() => {
+    if (editIdContato) {
+      editIdContato.focus();
+      editIdContato.select();
+    }
+  }, 100);
+}
+
+function closeProfileModal() {
+  const modal = els.profileModalBackdrop || document.getElementById("profile-modal-backdrop");
+  if (modal) {
+    modal.classList.remove("show");
+    modal.classList.remove("active");
+    modal.style.display = "";
+    modal.style.opacity = "";
+    modal.style.visibility = "";
+    modal.style.pointerEvents = "";
+  }
+}
+
+window.openProfileModal = openProfileModal;
+window.closeProfileModal = closeProfileModal;
+
+async function handleSaveProfile(e) {
+  e.preventDefault();
+  if (!appState.isAdmin) {
+    Toast.show("Acesso Negado", "Apenas administradores possuem permissão para alterar perfis.", "error");
+    return;
+  }
+
+  const profileId = els.profileEditId.value;
+  if (!profileId) {
+    Toast.show("Erro", "ID do perfil inválido.", "error");
+    return;
+  }
+
+  // User can ONLY alter id_contato
+  const newIdContato = els.profileEditIdContato.value.trim() || null;
+
+  try {
+    if (els.btnSaveProfile) {
+      els.btnSaveProfile.disabled = true;
+      els.btnSaveProfile.innerHTML = `<span>Salvando...</span>`;
+    }
+
+    const { error } = await supabaseClient
+      .from("profiles")
+      .update({ id_contato: newIdContato })
+      .eq("id", profileId);
+
+    if (error) throw error;
+
+    Toast.show("Salvo com Sucesso", "O campo id_contato foi atualizado no banco de dados.", "success");
+    closeProfileModal();
+    loadProfilesData(true);
+  } catch (err) {
+    console.error("Erro ao atualizar profile:", err);
+    Toast.show("Erro ao salvar", err.message || "Não foi possível atualizar o ID de Contato.", "error");
+  } finally {
+    if (els.btnSaveProfile) {
+      els.btnSaveProfile.disabled = false;
+      els.btnSaveProfile.innerHTML = `<i data-lucide="check" style="width: 14px; height: 14px;"></i> <span>Salvar ID de Contato</span>`;
+      lucide.createIcons();
+    }
   }
 }
 

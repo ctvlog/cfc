@@ -815,7 +815,8 @@ body {
 
 .queue-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
 }
 
@@ -825,12 +826,17 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.08);
+  padding: 8px 10px;
+  background: #0d1913;
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 10;
   border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 0 var(--border-color);
+}
+
+[data-theme="light"] .queue-table th {
+  background: #eef3f0;
 }
 
 .queue-table td {
@@ -851,7 +857,9 @@ body {
 /* Position indicator styling */
 .pos-cell {
   width: 32px;
+  min-width: 32px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .pos-badge {
@@ -876,13 +884,17 @@ body {
 
 /* Plate Component styling */
 .plate-cell {
-  width: 110px;
+  width: 112px;
+  min-width: 112px;
+  white-space: nowrap;
 }
 
 .plates-stack {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  align-items: flex-start;
+  width: max-content;
 }
 
 /* Clean Plate Badges Styling */
@@ -894,14 +906,17 @@ body {
   font-family: var(--font-heading);
   font-weight: 700;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+  word-break: keep-all;
   width: fit-content;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   text-align: center;
+  line-height: 1.2;
 }
 
 .plate-badge-main {
-  font-size: 0.8rem;
-  padding: 4px 8px;
+  font-size: 0.78rem;
+  padding: 3px 7px;
   background: var(--accent-bg-glow);
   border: 1px solid var(--border-color);
   color: var(--accent);
@@ -909,21 +924,21 @@ body {
 
 .plate-badge-trailer {
   font-size: 0.7rem;
-  padding: 2.5px 6px;
+  padding: 2px 5px;
   background: rgba(96, 165, 250, 0.08);
   border: 1px solid rgba(96, 165, 250, 0.2);
   color: var(--info);
 }
 
 [data-theme="light"] .plate-badge-main {
-  background: rgba(5, 150, 105, 0.06);
-  border-color: rgba(5, 150, 105, 0.2);
+  background: rgba(5, 150, 105, 0.08);
+  border-color: rgba(5, 150, 105, 0.25);
   color: var(--accent);
 }
 
 [data-theme="light"] .plate-badge-trailer {
-  background: rgba(37, 99, 235, 0.06);
-  border-color: rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.25);
   color: var(--info);
 }
 
@@ -950,6 +965,14 @@ body {
   margin-top: 1px;
 }
 
+/* Vinculo Column */
+.vinculo-cell {
+  width: 86px;
+  min-width: 86px;
+  text-align: center;
+  white-space: nowrap;
+}
+
 /* Frota Badge */
 .frota-badge {
   display: inline-flex;
@@ -959,6 +982,7 @@ body {
   border-radius: 4px;
   font-size: 0.65rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .frota-badge.frota {
@@ -975,8 +999,10 @@ body {
 
 /* Refusal Badge (Recusas) */
 .recusa-cell {
-  width: 48px;
+  width: 44px;
+  min-width: 44px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .recusa-badge {
@@ -1002,8 +1028,10 @@ body {
 
 /* Status Em Crítica */
 .critica-cell {
-  width: 48px;
+  width: 44px;
+  min-width: 44px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .critica-indicator {
@@ -1090,9 +1118,11 @@ body {
   transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.modal-backdrop.show {
-  opacity: 1;
-  visibility: visible;
+.modal-backdrop.show,
+.modal-backdrop.active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
 
 .modal-card {
@@ -1107,8 +1137,9 @@ body {
   overflow: hidden;
 }
 
-.modal-backdrop.show .modal-card {
-  transform: scale(1);
+.modal-backdrop.show .modal-card,
+.modal-backdrop.active .modal-card {
+  transform: scale(1) !important;
 }
 
 .modal-header {
@@ -2410,4 +2441,22 @@ body {
   background: var(--danger-bg);
   border-color: rgba(248, 113, 113, 0.3);
   color: var(--danger);
+}
+
+.btn-icon-subtle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-icon-subtle:hover {
+  color: var(--accent);
+  background: var(--accent-bg-glow);
 }

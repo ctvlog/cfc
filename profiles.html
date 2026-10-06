@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Perfis (Profiles) • Central de Fretes Cootravale</title>
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Core CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css?v=1.1.0">
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Specific adjustments for standalone profiles page */
+    .access-denied-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .access-denied-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 3rem 2.5rem;
+      max-width: 480px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .access-denied-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--danger-bg);
+      color: var(--danger);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Modal Guarantee for Profiles Editor */
+    .modal-backdrop.show,
+    .modal-backdrop.active {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: flex !important;
+      pointer-events: auto !important;
+    }
+
+    .modal-backdrop.show .modal-card,
+    .modal-backdrop.active .modal-card {
+      transform: scale(1) !important;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- AUTH CHECKING SPINNER SCREEN -->
+  <div id="auth-loading-screen"
+    style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 1rem;">
+    <div class="spinner" style="width: 36px; height: 36px; border-width: 3px; border-top-color: var(--accent);"></div>
+    <span style="color: var(--text-muted); font-size: 0.9rem;">Verificando credenciais de administrador...</span>
+  </div>
+
+  <!-- ACCESS DENIED SCREEN (Shown if not admin) -->
+  <div id="access-denied-screen" class="hidden access-denied-container">
+    <div class="access-denied-card">
+      <div class="access-denied-icon">
+        <i data-lucide="shield-alert" style="width: 32px; height: 32px;"></i>
+      </div>
+      <h2 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-primary);">
+        Acesso Exclusivo para Administradores
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem;">
+        O cadastro da tabela <code style="color: var(--accent);">profiles</code> é de acesso restrito a administradores da Central de Fretes. Seu perfil atual não possui permissão para visualizar ou alterar estes dados.
+      </p>
+      <a href="index.html" class="btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        <span>Voltar ao Painel Principal</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- MAIN APPLICATION LAYOUT (Shown only if admin) -->
+  <div id="app-layout" class="app-layout hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">
+          <i data-lucide="truck"></i>
+        </div>
+        <div class="logo-details">
+          <div class="logo-text">Cootravale</div>
+          <div class="logo-sub">Central de Fretes</div>
+        </div>
+      </div>
+
+      <div class="sidebar-content">
+        <div class="sidebar-section-title">Navegação</div>
+        <div class="nav-group" style="margin-bottom: 1.5rem;">
+          <a href="index.html" class="nav-item" style="text-decoration: none;">
+            <i data-lucide="layout-grid"></i>
+            <span>Filas de Carregamento</span>
+          </a>
+          <a href="fila-mobile.html" class="nav-item" style="text-decoration: none;"
+            title="Abrir painel otimizado para celular">
+            <i data-lucide="smartphone"></i>
+            <span>Fila Mobile</span>
+          </a>
+          <a href="index.html" class="nav-item" style="text-decoration: none;" onclick="sessionStorage.setItem('cfc_goto_view', 'movements')">
+            <i data-lucide="history"></i>
+            <span>Movimentações</span>
+          </a>
+          <a href="index.html" class="nav-item" style="text-decoration: none;" onclick="sessionStorage.setItem('cfc_goto_view', 'vehicles')">
+            <i data-lucide="truck"></i>
+            <span>Gestão de Veículos</span>
+          </a>
+          <a href="index.html" class="nav-item" style="text-decoration: none;" onclick="sessionStorage.setItem('cfc_goto_view', 'cooperados')">
+            <i data-lucide="users"></i>
+            <span>Gestão de Cooperados</span>
+          </a>
+          <a href="index.html" class="nav-item" style="text-decoration: none;" onclick="sessionStorage.setItem('cfc_goto_view', 'access')">
+            <i data-lucide="shield-check"></i>
+            <span>Controle de Acessos</span>
+          </a>
+          <a href="profiles.html" class="nav-item active" style="text-decoration: none;">
+            <i data-lucide="user-cog"></i>
+            <span>Perfis de Usuários</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar" id="current-user-avatar">AD</div>
+          <div class="user-info">
+            <span class="user-name" id="current-user-email">Carregando...</span>
+            <span class="user-role">Administrador</span>
+          </div>
+          <button class="btn-icon" id="btn-logout" title="Desconectar">
+            <i data-lucide="log-out"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="btn-icon" id="sidebar-toggle" title="Alternar barra lateral">
+            <i data-lucide="panel-left"></i>
+          </button>
+          <div class="page-title">
+            <h1 style="font-size: 1.15rem; font-weight: 700; margin: 0; font-family: var(--font-heading);">
+              Cadastro de Perfis (Profiles)
+            </h1>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Theme toggle -->
+          <button class="btn-icon" id="theme-toggle" title="Alternar modo claro/escuro">
+            <i data-lucide="moon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Profiles CRUD Section -->
+      <section class="crud-container" id="profiles-crud-section">
+        <div class="crud-header">
+          <div class="crud-title-area">
+            <h2 class="crud-title">Cadastro de Perfis (Tabela public.profiles)</h2>
+            <span class="crud-subtitle">Acesso exclusivo de Administrador • Alteração restrita ao campo ID de Contato</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-profiles"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+              <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+              <span>Recarregar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary Metrics -->
+        <div class="access-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue"><i data-lucide="users"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-profiles-total">0</span>
+              <span class="metric-label">Total de Perfis</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon green"><i data-lucide="shield-check"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-profiles-admins">0</span>
+              <span class="metric-label">Administradores</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="link"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-profiles-linked">0</span>
+              <span class="metric-label">Com ID Contato</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon orange"><i data-lucide="link-2-off"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-profiles-unlinked">0</span>
+              <span class="metric-label">Sem ID Contato</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters & Toolbar -->
+        <div class="crud-toolbar access-toolbar">
+          <div class="crud-search-wrapper">
+            <i data-lucide="search" class="filter-icon"></i>
+            <input type="text" id="crud-profiles-search-input" class="filter-input"
+              placeholder="Buscar por e-mail, função ou ID Contato...">
+          </div>
+
+          <div class="access-filters-group">
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-profiles-role-filter">Função:</label>
+              <select id="crud-profiles-role-filter" class="filter-select">
+                <option value="all">Todas as Funções</option>
+                <option value="admin">Administrador</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="crud-profiles-link-filter">ID Contato:</label>
+              <select id="crud-profiles-link-filter" class="filter-select">
+                <option value="all">Todos</option>
+                <option value="linked">Com ID Contato</option>
+                <option value="unlinked">Sem ID Contato</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-profiles-filters" title="Limpar Filtros"
+              style="display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Wrapper -->
+        <div class="crud-table-wrapper">
+          <table class="crud-table">
+            <thead>
+              <tr>
+                <th>Usuário / E-mail</th>
+                <th style="width: 150px; text-align: center;">Função (Role)</th>
+                <th>ID Contato (Digisac)</th>
+                <th style="width: 160px;">Data de Cadastro</th>
+                <th style="width: 130px; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="crud-profiles-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- PROFILES EDIT ID_CONTATO MODAL -->
+  <div class="modal-backdrop" id="profile-modal-backdrop">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="logo-icon" style="width: 36px; height: 36px; border-radius: 8px;">
+            <i data-lucide="user-cog" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title" id="profile-modal-title">Editar ID de Contato</h3>
+            <span class="crud-subtitle">Tabela public.profiles</span>
+          </div>
+        </div>
+        <button class="modal-close" id="profile-modal-close" type="button">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="profile-form">
+          <input type="hidden" id="profile-edit-id">
+
+          <div class="form-group">
+            <label class="form-label">E-mail do Usuário</label>
+            <input class="form-input" style="padding-left: 12px; background: rgba(0,0,0,0.06); cursor: not-allowed;"
+              type="text" id="profile-edit-email" readonly disabled>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label">Função / Papel (Role)</label>
+            <input class="form-input" style="padding-left: 12px; background: rgba(0,0,0,0.06); cursor: not-allowed;"
+              type="text" id="profile-edit-role" readonly disabled>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label">UUID do Registro</label>
+            <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.06); cursor: not-allowed;"
+              type="text" id="profile-edit-uuid" readonly disabled>
+          </div>
+
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <label class="form-label" for="profile-edit-id-contato" style="display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="key" style="width: 13px; height: 13px; color: var(--accent);"></i>
+              <span>ID de Contato (id_contato) *</span>
+            </label>
+            <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.85rem;"
+              type="text" id="profile-edit-id-contato" placeholder="Ex: 0c20c71a-eec6-462e-a394-82e1f759c...">
+            <span style="font-size: 0.74rem; color: var(--text-muted); display: block; margin-top: 6px; line-height: 1.4;">
+              💡 <strong>Regra de Negócio:</strong> Este é o <strong>único campo editável</strong> na tabela de perfis. Deixe em branco caso deseje desvincular.
+            </span>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-profile"
+              style="width: auto;">Cancelar</button>
+            <button type="submit" class="btn btn-sm" id="btn-save-profile" style="width: auto; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+              <span>Salvar ID de Contato</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // STANDALONE PROFILES PAGE LOGIC
+    // ==========================================
+    const SUPABASE_URL = "https://ebnquccajiphgfnvuehx.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_rbNRNEKmmEvKqKMpFmCAtg_2JezrKUZ";
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // State
+    const state = {
+      user: null,
+      isAdmin: false,
+      profiles: [],
+      search: "",
+      roleFilter: "all",
+      linkFilter: "all",
+      theme: "dark"
+    };
+
+    // DOM Elements
+    const dom = {
+      authLoading: document.getElementById("auth-loading-screen"),
+      accessDenied: document.getElementById("access-denied-screen"),
+      appLayout: document.getElementById("app-layout"),
+      currentUserAvatar: document.getElementById("current-user-avatar"),
+      currentUserEmail: document.getElementById("current-user-email"),
+      btnLogout: document.getElementById("btn-logout"),
+      sidebar: document.getElementById("sidebar"),
+      sidebarToggle: document.getElementById("sidebar-toggle"),
+      themeToggle: document.getElementById("theme-toggle"),
+      statTotal: document.getElementById("stat-profiles-total"),
+      statAdmins: document.getElementById("stat-profiles-admins"),
+      statLinked: document.getElementById("stat-profiles-linked"),
+      statUnlinked: document.getElementById("stat-profiles-unlinked"),
+      searchInput: document.getElementById("crud-profiles-search-input"),
+      roleFilter: document.getElementById("crud-profiles-role-filter"),
+      linkFilter: document.getElementById("crud-profiles-link-filter"),
+      btnReset: document.getElementById("btn-reset-profiles-filters"),
+      btnRefresh: document.getElementById("btn-refresh-profiles"),
+      tbody: document.getElementById("crud-profiles-tbody"),
+      modalBackdrop: document.getElementById("profile-modal-backdrop"),
+      modalClose: document.getElementById("profile-modal-close"),
+      btnCancel: document.getElementById("btn-cancel-profile"),
+      form: document.getElementById("profile-form"),
+      editId: document.getElementById("profile-edit-id"),
+      editEmail: document.getElementById("profile-edit-email"),
+      editRole: document.getElementById("profile-edit-role"),
+      editUuid: document.getElementById("profile-edit-uuid"),
+      editIdContato: document.getElementById("profile-edit-id-contato"),
+      btnSave: document.getElementById("btn-save-profile")
+    };
+
+    // Toast
+    const Toast = {
+      container: document.getElementById("toast-container"),
+      show(title, message, type = "success") {
+        const toast = document.createElement("div");
+        toast.className = `toast toast-${type}`;
+        const icon = type === "success" ? "check-circle" : (type === "error" ? "x-circle" : "alert-triangle");
+        toast.innerHTML = `
+          <i data-lucide="${icon}" class="toast-icon"></i>
+          <div class="toast-content">
+            <div class="toast-title">${escapeHTML(title)}</div>
+            <div class="toast-message">${escapeHTML(message)}</div>
+          </div>
+          <button class="toast-close"><i data-lucide="x"></i></button>
+        `;
+        toast.querySelector(".toast-close").addEventListener("click", () => toast.remove());
+        this.container.appendChild(toast);
+        lucide.createIcons();
+        setTimeout(() => toast.remove(), 4000);
+      }
+    };
+
+    function escapeHTML(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatDateTime(isoString) {
+      if (!isoString) return "-";
+      try {
+        const date = new Date(isoString);
+        return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      } catch {
+        return isoString;
+      }
+    }
+
+    // Auth & Permission Guard
+    async function checkAdminAuth() {
+      try {
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError || !session) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        state.user = session.user;
+
+        // Check profiles table role
+        const { data: profile, error: profileError } = await supabaseClient
+          .from("profiles")
+          .select("role")
+          .eq("id", state.user.id)
+          .single();
+
+        if (profileError || !profile || profile.role !== "admin") {
+          state.isAdmin = false;
+          dom.authLoading.classList.add("hidden");
+          dom.accessDenied.classList.remove("hidden");
+          lucide.createIcons();
+          return;
+        }
+
+        // Admin confirmed!
+        state.isAdmin = true;
+        dom.authLoading.classList.add("hidden");
+        dom.appLayout.classList.remove("hidden");
+
+        dom.currentUserEmail.textContent = state.user.email;
+        dom.currentUserAvatar.textContent = state.user.email.substring(0, 2).toUpperCase();
+
+        initTheme();
+        initEvents();
+        lucide.createIcons();
+        loadProfiles();
+      } catch (err) {
+        console.error("Erro na verificação de autenticação:", err);
+        dom.authLoading.classList.add("hidden");
+        dom.accessDenied.classList.remove("hidden");
+        lucide.createIcons();
+      }
+    }
+
+    // Load Profiles
+    async function loadProfiles() {
+      if (!state.isAdmin) return;
+
+      dom.tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 2.5rem;">
+            <div class="spinner" style="margin: 0 auto 10px auto; border-top-color: var(--accent);"></div>
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Carregando tabela profiles...</span>
+          </td>
+        </tr>
+      `;
+
+      try {
+        const { data, error } = await supabaseClient
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        state.profiles = data || [];
+        updateStats();
+        renderTable();
+      } catch (err) {
+        console.error("Erro ao carregar profiles:", err);
+        dom.tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 2rem; color: var(--danger);">
+              <i data-lucide="alert-circle" style="display:inline-block; margin-bottom: 6px;"></i>
+              <div>Falha ao carregar perfis: ${escapeHTML(err.message || "Erro desconhecido")}</div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        Toast.show("Erro ao carregar", "Não foi possível carregar os perfis.", "error");
+      }
+    }
+
+    function updateStats() {
+      const total = state.profiles.length;
+      const admins = state.profiles.filter(p => p.role === "admin").length;
+      const linked = state.profiles.filter(p => p.id_contato && p.id_contato.trim() !== "").length;
+      const unlinked = total - linked;
+
+      dom.statTotal.textContent = total;
+      dom.statAdmins.textContent = admins;
+      dom.statLinked.textContent = linked;
+      dom.statUnlinked.textContent = unlinked;
+    }
+
+    function renderTable() {
+      const search = (state.search || "").toLowerCase();
+      const roleFilter = state.roleFilter || "all";
+      const linkFilter = state.linkFilter || "all";
+
+      const filtered = state.profiles.filter(p => {
+        const emailMatch = p.email && p.email.toLowerCase().includes(search);
+        const roleMatch = p.role && p.role.toLowerCase().includes(search);
+        const contatoMatch = p.id_contato && p.id_contato.toLowerCase().includes(search);
+        const idMatch = p.id && p.id.toLowerCase().includes(search);
+        const matchesSearch = !search || emailMatch || roleMatch || contatoMatch || idMatch;
+
+        const matchesRole = roleFilter === "all" || p.role === roleFilter;
+
+        const hasContact = p.id_contato && p.id_contato.trim() !== "";
+        const matchesLink = linkFilter === "all" ||
+          (linkFilter === "linked" && hasContact) ||
+          (linkFilter === "unlinked" && !hasContact);
+
+        return matchesSearch && matchesRole && matchesLink;
+      });
+
+      if (filtered.length === 0) {
+        dom.tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 2.5rem;">
+              <div class="empty-queue">
+                <i data-lucide="user-x"></i>
+                <div class="empty-queue-text">Nenhum perfil encontrado com os filtros selecionados.</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      dom.tbody.innerHTML = "";
+
+      filtered.forEach(p => {
+        const tr = document.createElement("tr");
+
+        // Email
+        const tdEmail = document.createElement("td");
+        tdEmail.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--accent-bg-glow); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;">
+              <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+            </div>
+            <div>
+              <div style="font-weight: 600; color: var(--text-primary); font-size: 0.82rem;">${escapeHTML(p.email || "Sem e-mail")}</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted); font-family: monospace;" title="UUID: ${p.id}">
+                ${p.id ? p.id.substring(0, 13) + '...' : '-'}
+              </div>
+            </div>
+          </div>
+        `;
+        tr.appendChild(tdEmail);
+
+        // Role
+        const tdRole = document.createElement("td");
+        tdRole.style.textAlign = "center";
+        const isAdmin = p.role === "admin";
+        tdRole.innerHTML = `
+          <span class="frota-badge ${isAdmin ? 'frota' : 'terceiro'}" style="font-size: 0.72rem; padding: 3px 8px;">
+            <i data-lucide="${isAdmin ? 'shield-check' : 'user'}" style="width: 11px; height: 11px;"></i>
+            ${isAdmin ? 'Administrador' : (p.role ? escapeHTML(p.role) : 'Viewer')}
+          </span>
+        `;
+        tr.appendChild(tdRole);
+
+        // ID Contato (Only editable field)
+        const tdContato = document.createElement("td");
+        if (p.id_contato && p.id_contato.trim()) {
+          const escapedContato = escapeHTML(p.id_contato);
+          tdContato.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <code style="background: rgba(0,0,0,0.06); padding: 2px 7px; border-radius: 4px; font-size: 0.78rem; color: var(--accent); border: 1px solid var(--border-color); font-family: monospace;">
+                ${escapedContato}
+              </code>
+              <button type="button" class="btn-icon-subtle" title="Copiar ID de Contato" data-clipboard="${escapedContato}">
+                <i data-lucide="copy" style="width: 13px; height: 13px;"></i>
+              </button>
+            </div>
+          `;
+          const copyBtn = tdContato.querySelector("button[data-clipboard]");
+          if (copyBtn) {
+            copyBtn.addEventListener("click", () => {
+              navigator.clipboard.writeText(p.id_contato);
+              Toast.show("Copiado", "ID de Contato copiado para a área de transferência.", "success");
+            });
+          }
+        } else {
+          tdContato.innerHTML = `<span style="color: var(--text-muted); font-size: 0.78rem; opacity: 0.6; font-style: italic;">Não informado</span>`;
+        }
+        tr.appendChild(tdContato);
+
+        // Created At
+        const tdCreated = document.createElement("td");
+        tdCreated.style.fontSize = "0.78rem";
+        tdCreated.style.color = "var(--text-muted)";
+        tdCreated.textContent = p.created_at ? formatDateTime(p.created_at) : "-";
+        tr.appendChild(tdCreated);
+
+        // Actions
+        const tdActions = document.createElement("td");
+        tdActions.style.textAlign = "center";
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "btn btn-sm btn-secondary";
+        editBtn.style.padding = "4px 8px";
+        editBtn.style.display = "inline-flex";
+        editBtn.style.alignItems = "center";
+        editBtn.style.gap = "4px";
+        editBtn.style.cursor = "pointer";
+        editBtn.title = "Alterar ID de Contato";
+        editBtn.innerHTML = `<i data-lucide="pencil" style="width: 13px; height: 13px; pointer-events: none;"></i> <span style="pointer-events: none;">Editar</span>`;
+        editBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openModal(p);
+        });
+        tdActions.appendChild(editBtn);
+        tr.appendChild(tdActions);
+
+        dom.tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    function openModal(profile) {
+      if (!dom.modalBackdrop) return;
+      if (dom.editId) dom.editId.value = profile.id || "";
+      if (dom.editEmail) dom.editEmail.value = profile.email || "";
+      if (dom.editRole) dom.editRole.value = profile.role === "admin" ? "Administrador (admin)" : (profile.role || "Viewer");
+      if (dom.editUuid) dom.editUuid.value = profile.id || "";
+      if (dom.editIdContato) dom.editIdContato.value = profile.id_contato || "";
+
+      dom.modalBackdrop.classList.add("show");
+      dom.modalBackdrop.classList.add("active");
+      dom.modalBackdrop.style.display = "flex";
+      dom.modalBackdrop.style.opacity = "1";
+      dom.modalBackdrop.style.visibility = "visible";
+      dom.modalBackdrop.style.pointerEvents = "auto";
+
+      setTimeout(() => {
+        if (dom.editIdContato) {
+          dom.editIdContato.focus();
+          dom.editIdContato.select();
+        }
+      }, 100);
+    }
+
+    function closeModal() {
+      if (!dom.modalBackdrop) return;
+      dom.modalBackdrop.classList.remove("show");
+      dom.modalBackdrop.classList.remove("active");
+      dom.modalBackdrop.style.display = "";
+      dom.modalBackdrop.style.opacity = "";
+      dom.modalBackdrop.style.visibility = "";
+      dom.modalBackdrop.style.pointerEvents = "";
+    }
+
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+
+    async function handleSave(e) {
+      e.preventDefault();
+      if (!state.isAdmin) {
+        Toast.show("Acesso Negado", "Apenas administradores podem alterar perfis.", "error");
+        return;
+      }
+
+      const profileId = dom.editId.value;
+      if (!profileId) {
+        Toast.show("Erro", "ID do perfil inválido.", "error");
+        return;
+      }
+
+      const newIdContato = dom.editIdContato.value.trim() || null;
+
+      try {
+        dom.btnSave.disabled = true;
+        dom.btnSave.innerHTML = `<span>Salvando...</span>`;
+
+        const { error } = await supabaseClient
+          .from("profiles")
+          .update({ id_contato: newIdContato })
+          .eq("id", profileId);
+
+        if (error) throw error;
+
+        Toast.show("Salvo com Sucesso", "O campo id_contato foi atualizado.", "success");
+        closeModal();
+        loadProfiles();
+      } catch (err) {
+        console.error("Erro ao salvar perfil:", err);
+        Toast.show("Erro ao salvar", err.message || "Falha na gravação do ID de Contato.", "error");
+      } finally {
+        dom.btnSave.disabled = false;
+        dom.btnSave.innerHTML = `<i data-lucide="check" style="width: 14px; height: 14px;"></i> <span>Salvar ID de Contato</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    // Events
+    function initEvents() {
+      dom.btnRefresh.addEventListener("click", loadProfiles);
+      dom.modalClose.addEventListener("click", closeModal);
+      dom.btnCancel.addEventListener("click", closeModal);
+      dom.modalBackdrop.addEventListener("click", (e) => {
+        if (e.target === dom.modalBackdrop) closeModal();
+      });
+      dom.form.addEventListener("submit", handleSave);
+
+      // Search & Filters
+      dom.searchInput.addEventListener("input", (e) => {
+        state.search = e.target.value.trim();
+        renderTable();
+      });
+
+      dom.roleFilter.addEventListener("change", (e) => {
+        state.roleFilter = e.target.value;
+        renderTable();
+      });
+
+      dom.linkFilter.addEventListener("change", (e) => {
+        state.linkFilter = e.target.value;
+        renderTable();
+      });
+
+      dom.btnReset.addEventListener("click", () => {
+        state.search = "";
+        state.roleFilter = "all";
+        state.linkFilter = "all";
+        dom.searchInput.value = "";
+        dom.roleFilter.value = "all";
+        dom.linkFilter.value = "all";
+        renderTable();
+      });
+
+      // Sidebar Toggle
+      dom.sidebarToggle.addEventListener("click", () => {
+        dom.sidebar.classList.toggle("collapsed");
+      });
+
+      // Theme toggle
+      dom.themeToggle.addEventListener("click", () => {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        const newTheme = isDark ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("cfc_theme", newTheme);
+        dom.themeToggle.innerHTML = `<i data-lucide="${newTheme === 'dark' ? 'moon' : 'sun'}"></i>`;
+        lucide.createIcons();
+      });
+
+      // Logout
+      dom.btnLogout.addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "index.html";
+      });
+
+      // Escape key
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeModal();
+      });
+    }
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem("cfc_theme") || "dark";
+      document.documentElement.setAttribute("data-theme", savedTheme);
+      dom.themeToggle.innerHTML = `<i data-lucide="${savedTheme === 'dark' ? 'moon' : 'sun'}"></i>`;
+    }
+
+    // Start
+    checkAdminAuth();
+  </script>
+</body>
+
+</html>
