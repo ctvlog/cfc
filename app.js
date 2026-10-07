@@ -1202,8 +1202,8 @@ function renderQueuesGrid() {
         vCell.innerHTML = `
           <div class="vehicle-type" title="${vehicle.tipo || 'N/D'}">${vehicle.tipo || 'N/D'}</div>
           <div class="cooperado-name" title="${vehicle.nomeCooperado || 'N/D'}">${vehicle.nomeCooperado || 'N/D'}</div>
-          <div class="history-date" style="font-size: 0.65rem; margin-top: 4px;" title="Entrada na fila: ${formatDateTime(vehicle.dthRef)}">
-            Entrou há: ${getRelativeTime(vehicle.dthRef)}
+          <div class="history-date" style="font-size: 0.65rem; margin-top: 4px;" title="Entrada na fila: ${formatDateTime(vehicle.created_at || vehicle.dthRef)}">
+            Entrou há: ${getRelativeTime(vehicle.created_at || vehicle.dthRef)}
           </div>
         `;
         row.appendChild(vCell);

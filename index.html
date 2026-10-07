@@ -195,7 +195,7 @@
           </button>
           <div class="header-title-container">
             <h2 class="header-title">Filas de Carregamento</h2>
-            <span class="header-subtitle">Central de Fretes | v1.04</span>
+            <span class="header-subtitle">Central de Fretes | v1.05</span>
           </div>
         </div>
 
@@ -731,7 +731,8 @@
         <div class="crud-header">
           <div class="crud-title-area">
             <h2 class="crud-title">Cadastro de Perfis (Profiles)</h2>
-            <span class="crud-subtitle">Acesso exclusivo de Administrador • Alteração restrita ao campo ID de Contato</span>
+            <span class="crud-subtitle">Acesso exclusivo de Administrador • Alteração restrita ao campo ID de
+              Contato</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <button class="btn btn-sm btn-secondary" id="btn-refresh-profiles"
@@ -801,8 +802,8 @@
               </select>
             </div>
 
-            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-profiles-filters" title="Limpar Filtros"
-              style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-profiles-filters"
+              title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
               <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
               <span>Limpar</span>
             </button>
@@ -1211,26 +1212,31 @@
 
           <div class="form-group" style="margin-top: 1.25rem;">
             <label class="form-label">UUID do Registro</label>
-            <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.06); cursor: not-allowed;"
+            <input class="form-input"
+              style="padding-left: 12px; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.06); cursor: not-allowed;"
               type="text" id="profile-edit-uuid" readonly disabled>
           </div>
 
           <div class="form-group" style="margin-top: 1.25rem;">
-            <label class="form-label" for="profile-edit-id-contato" style="display: flex; align-items: center; gap: 6px;">
+            <label class="form-label" for="profile-edit-id-contato"
+              style="display: flex; align-items: center; gap: 6px;">
               <i data-lucide="key" style="width: 13px; height: 13px; color: var(--accent);"></i>
               <span>ID de Contato (id_contato) *</span>
             </label>
             <input class="form-input" style="padding-left: 12px; font-family: monospace; font-size: 0.85rem;"
               type="text" id="profile-edit-id-contato" placeholder="Ex: 0c20c71a-eec6-462e-a394-82e1f759c...">
-            <span style="font-size: 0.74rem; color: var(--text-muted); display: block; margin-top: 6px; line-height: 1.4;">
-              💡 <strong>Regra de Negócio:</strong> Este é o <strong>único campo editável</strong> na tabela de perfis. Deixe em branco caso deseje desvincular.
+            <span
+              style="font-size: 0.74rem; color: var(--text-muted); display: block; margin-top: 6px; line-height: 1.4;">
+              💡 <strong>Regra de Negócio:</strong> Este é o <strong>único campo editável</strong> na tabela de perfis.
+              Deixe em branco caso deseje desvincular.
             </span>
           </div>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 12px; justify-content: flex-end;">
             <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-profile"
               style="width: auto;">Cancelar</button>
-            <button type="submit" class="btn btn-sm" id="btn-save-profile" style="width: auto; display: flex; align-items: center; gap: 6px;">
+            <button type="submit" class="btn btn-sm" id="btn-save-profile"
+              style="width: auto; display: flex; align-items: center; gap: 6px;">
               <i data-lucide="check" style="width: 14px; height: 14px;"></i>
               <span>Salvar ID de Contato</span>
             </button>
@@ -1241,7 +1247,7 @@
   </div>
 
   <!-- Main JavaScript File -->
-  <script src="app.js?v=1.1.5"></script>
+  <script src="app.js?v=1.1.6"></script>
 </body>
 
 </html>

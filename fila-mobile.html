@@ -2238,11 +2238,11 @@
               </div>
 
               <div class="card-footer-row">
-                <div class="time-in-queue" title="Entrada na fila: ${formatDateTime(vehicle.dthRef)}">
+                <div class="time-in-queue" title="Entrada na fila: ${formatDateTime(vehicle.created_at || vehicle.dthRef)}">
                   <i data-lucide="clock"></i>
-                  <span>Entrou há: <strong>${getRelativeTime(vehicle.dthRef)}</strong></span>
+                  <span>Entrou há: <strong>${getRelativeTime(vehicle.created_at || vehicle.dthRef)}</strong></span>
                 </div>
-                <div class="exact-date">${formatDateTime(vehicle.dthRef)}</div>
+                <div class="exact-date">${formatDateTime(vehicle.created_at || vehicle.dthRef)}</div>
               </div>
             `;
 
@@ -2287,7 +2287,7 @@
                   <div style="font-size: 0.68rem; color: var(--text-muted);">${vehicle.nomeCooperado || 'N/D'}</div>
                 </td>
                 <td style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">
-                  ${getRelativeTime(vehicle.dthRef)}
+                  ${getRelativeTime(vehicle.created_at || vehicle.dthRef)}
                 </td>
                 <td style="text-align: center; width: 44px;">
                   ${recCount > 0 ? `
