@@ -1025,6 +1025,28 @@
       background: rgba(245, 158, 11, 0.05);
     }
 
+    .dense-table tr.queue-row-warning {
+      background: rgba(245, 158, 11, 0.12);
+    }
+    .dense-table tr.queue-row-danger {
+      background: rgba(239, 68, 68, 0.13);
+    }
+    .dense-table tr.queue-row-critical {
+      background: rgba(239, 68, 68, 0.25);
+    }
+    .vehicle-card.queue-row-warning {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, var(--bg-surface) 100%);
+    }
+    .vehicle-card.queue-row-danger {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.09) 0%, var(--bg-surface) 100%);
+    }
+    .vehicle-card.queue-row-critical {
+      border-color: rgba(239, 68, 68, 0.6);
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.18) 0%, var(--bg-surface) 100%);
+    }
+
     /* ==========================================================================
        EMPTY QUEUE & SKELETON LOADERS
        ========================================================================== */
@@ -1519,7 +1541,7 @@
           <!-- Refresh Countdown Pill -->
           <div class="refresh-pill" id="btn-toggle-refresh" title="Pausar / Iniciar atualização automática">
             <div class="pulse-dot" id="pulse-dot"></div>
-            <span id="countdown-text">30s</span>
+            <span id="countdown-text">3m</span>
           </div>
 
           <!-- Instant Reload -->
@@ -1697,8 +1719,8 @@
       autoRefresh: {
         active: true,
         intervalId: null,
-        countdown: 30,
-        maxSeconds: 30
+        countdown: 180,
+        maxSeconds: 180
       },
       theme: "dark"
     };
@@ -1833,6 +1855,19 @@
       if (!vehicle) return false;
       const val = vehicle.emCritica !== undefined ? vehicle.emCritica : vehicle.em_critica;
       return val === true || val === "true" || val === 1 || val === "1" || val === "S" || val === "s" || val === "sim" || val === "SIM";
+    }
+
+    // Helper: Classe de alerta por tempo de espera na fila (>18h amarelo leve, >22h vermelho leve, >24h vermelho moderado)
+    function getVehicleAgeClass(vehicle) {
+      const refDateStr = vehicle.created_at || vehicle.dthRef;
+      if (!refDateStr) return "";
+      const startMs = new Date(refDateStr).getTime();
+      if (isNaN(startMs)) return "";
+      const ageHours = (Date.now() - startMs) / (1000 * 60 * 60);
+      if (ageHours > 24) return "queue-row-critical";
+      if (ageHours > 22) return "queue-row-danger";
+      if (ageHours > 18) return "queue-row-warning";
+      return "";
     }
 
     // ==========================================================================
@@ -2171,8 +2206,9 @@
 
           vehicles.forEach((vehicle, idx) => {
             const isLead = (idx === 0);
+            const ageClass = getVehicleAgeClass(vehicle);
             const card = document.createElement("article");
-            card.className = `vehicle-card ${isLead ? 'lead-vehicle' : ''}`;
+            card.className = ["vehicle-card", isLead ? "lead-vehicle" : "", ageClass].filter(Boolean).join(" ");
 
             const recCount = vehicle.recusas && Array.isArray(vehicle.recusas) ? vehicle.recusas.length : 0;
             const recusaBtnHTML = recCount > 0 ? `
@@ -2270,9 +2306,10 @@
             const isLead = (idx === 0);
             const recCount = vehicle.recusas && Array.isArray(vehicle.recusas) ? vehicle.recusas.length : 0;
             const isCritica = isEmCritica(vehicle);
+            const ageClass = getVehicleAgeClass(vehicle);
 
             tableRowsHTML += `
-              <tr class="${isLead ? 'lead-row' : ''}">
+              <tr class="${[isLead ? 'lead-row' : '', ageClass].filter(Boolean).join(' ')}">
                 <td style="width: 32px; font-weight: 800; font-family: var(--font-heading); color: ${isLead ? 'var(--warning)' : 'var(--text-muted)'}; text-align: center;">
                   ${idx + 1}º
                 </td>
@@ -2448,10 +2485,19 @@
       updateAutoRefreshUI();
     }
 
+    function formatCountdownMobile(seconds) {
+      if (seconds >= 60) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+      }
+      return `${seconds}s`;
+    }
+
     function updateAutoRefreshUI() {
       if (state.autoRefresh.active) {
         dom.pulseDot.classList.remove("paused");
-        dom.countdownText.textContent = `${state.autoRefresh.countdown}s`;
+        dom.countdownText.textContent = formatCountdownMobile(state.autoRefresh.countdown);
       } else {
         dom.pulseDot.classList.add("paused");
         dom.countdownText.textContent = "Pausa";

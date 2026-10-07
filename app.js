@@ -30,8 +30,8 @@ let appState = {
   autoRefresh: {
     active: true,
     intervalId: null,
-    countdown: 30,
-    maxSeconds: 30
+    countdown: 180,
+    maxSeconds: 180
   },
   // Vehicles CRUD state
   vehicles: [],
@@ -1168,6 +1168,22 @@ function renderQueuesGrid() {
       vehicles.forEach((vehicle, index) => {
         const row = document.createElement("tr");
 
+        // Destaque visual por tempo de espera (>18h amarelo leve, >22h vermelho leve, >24h vermelho moderado)
+        const refDateStr = vehicle.created_at || vehicle.dthRef;
+        if (refDateStr) {
+          const startMs = new Date(refDateStr).getTime();
+          if (!isNaN(startMs)) {
+            const ageHours = (Date.now() - startMs) / (1000 * 60 * 60);
+            if (ageHours > 24) {
+              row.className = "queue-row-critical";
+            } else if (ageHours > 22) {
+              row.className = "queue-row-danger";
+            } else if (ageHours > 18) {
+              row.className = "queue-row-warning";
+            }
+          }
+        }
+
         // Position Column
         const posCell = document.createElement("td");
         posCell.className = "pos-cell";
@@ -1378,10 +1394,19 @@ function stopAutoRefresh() {
   updateAutoRefreshUI();
 }
 
+function formatRefreshCountdown(seconds) {
+  if (seconds >= 60) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  }
+  return `${seconds}s`;
+}
+
 function updateAutoRefreshUI() {
   if (appState.autoRefresh.active) {
     els.btnToggleAutoRefresh.innerHTML = `<i data-lucide="pause"></i>`;
-    els.refreshCountdownText.textContent = `Atualizando em ${appState.autoRefresh.countdown}s`;
+    els.refreshCountdownText.textContent = `Atualizando em ${formatRefreshCountdown(appState.autoRefresh.countdown)}`;
     els.refreshIndicatorDot.className = "indicator-dot active";
   } else {
     els.btnToggleAutoRefresh.innerHTML = `<i data-lucide="play"></i>`;
