@@ -119,6 +119,13 @@ const els = {
   modalBody: document.getElementById("modal-body"),
   modalCloseBtn: document.getElementById("modal-close"),
 
+  // Location / Tracker Modal
+  locationModalBackdrop: document.getElementById("location-modal-backdrop"),
+  locationModalTitle: document.getElementById("location-modal-title"),
+  locationModalSubtitle: document.getElementById("location-modal-subtitle"),
+  locationModalBody: document.getElementById("location-modal-body"),
+  locationModalClose: document.getElementById("location-modal-close"),
+
   // Admin and CRUD elements
   sidebarAdminNav: document.getElementById("sidebar-admin-nav"),
   navBtnQueues: document.getElementById("nav-btn-queues"),
@@ -353,6 +360,29 @@ function formatDateTime(isoString) {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function formatDateTimeWithSeconds(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+
+function formatPlateString(plateString) {
+  if (!plateString) return "";
+  const cleanedPlate = plateString.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (cleanedPlate.length === 7) {
+    return cleanedPlate.substring(0, 3) + "-" + cleanedPlate.substring(3);
+  }
+  return cleanedPlate;
 }
 
 function getRelativeTime(isoString) {
@@ -636,6 +666,15 @@ function setupEventListeners() {
     if (e.target === els.modalBackdrop) closeModal();
   });
 
+  if (els.locationModalClose) {
+    els.locationModalClose.addEventListener("click", closeLocationModal);
+  }
+  if (els.locationModalBackdrop) {
+    els.locationModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === els.locationModalBackdrop) closeLocationModal();
+    });
+  }
+
   // Admin Navigation event listeners
   els.navBtnQueues.addEventListener("click", () => switchView("queues"));
   els.navBtnMovements.addEventListener("click", () => switchView("movements"));
@@ -897,6 +936,7 @@ function setupEventListeners() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       closeModal();
+      closeLocationModal();
       closeVehicleModal();
       closeCooperadoModal();
       closeAccessModal();
@@ -1197,16 +1237,32 @@ function renderQueuesGrid() {
         const platesStack = document.createElement("div");
         platesStack.className = "plates-stack";
 
-        // Render Main Plate (placa)
-        const mainPlateHTML = renderPlateBadge(vehicle.placa);
-        platesStack.innerHTML = mainPlateHTML;
+        // Render Main Plate (placa) - clickable to view tracker location
+        const mainPlateBadge = document.createElement("span");
+        mainPlateBadge.className = "plate-badge plate-badge-main";
+        mainPlateBadge.title = "Placa Principal • Clique para ver localização de entrada do rastreador";
+        mainPlateBadge.style.cursor = "pointer";
+        mainPlateBadge.textContent = formatPlateString(vehicle.placa);
+        mainPlateBadge.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openVehicleLocationModal(vehicle);
+        });
+        platesStack.appendChild(mainPlateBadge);
 
         // Render trailers (placa2, placa3) if present
         if (vehicle.placa2) {
-          platesStack.innerHTML += renderPlateBadge(vehicle.placa2, true);
+          const trailer1 = document.createElement("span");
+          trailer1.className = "plate-badge plate-badge-trailer";
+          trailer1.title = "Reboque";
+          trailer1.textContent = formatPlateString(vehicle.placa2);
+          platesStack.appendChild(trailer1);
         }
         if (vehicle.placa3) {
-          platesStack.innerHTML += renderPlateBadge(vehicle.placa3, true);
+          const trailer2 = document.createElement("span");
+          trailer2.className = "plate-badge plate-badge-trailer";
+          trailer2.title = "Reboque";
+          trailer2.textContent = formatPlateString(vehicle.placa3);
+          platesStack.appendChild(trailer2);
         }
 
         plateCell.appendChild(platesStack);
@@ -1366,6 +1422,116 @@ function openRefusalsModal(vehicle) {
 
 function closeModal() {
   els.modalBackdrop.classList.remove("show");
+}
+
+// VEHICLE LOCATION / TRACKER MODAL LOGIC
+function openVehicleLocationModal(vehicle) {
+  if (!vehicle) return;
+
+  const formattedPlate = formatPlateString(vehicle.placa);
+  if (els.locationModalTitle) {
+    els.locationModalTitle.textContent = `Localização • ${formattedPlate}`;
+  }
+
+  const hasLocation = Boolean(vehicle.local_entrada && String(vehicle.local_entrada).trim() && String(vehicle.local_entrada).trim().toUpperCase() !== "NULL");
+  const hasDthLocal = Boolean(vehicle.dth_local && String(vehicle.dth_local).trim() && String(vehicle.dth_local).trim().toUpperCase() !== "NULL");
+
+  const locationText = hasLocation ? String(vehicle.local_entrada).trim() : "Local não registrado pelo rastreador";
+  const dthLocalFormatted = hasDthLocal ? formatDateTimeWithSeconds(vehicle.dth_local) : "Data/hora não registrada pelo rastreador";
+  const dthLocalRelative = hasDthLocal ? getRelativeTime(vehicle.dth_local) : "";
+
+  const queueEntryDate = vehicle.created_at || vehicle.dthRef;
+  const queueEntryFormatted = queueEntryDate ? formatDateTimeWithSeconds(queueEntryDate) : "Não informada";
+  const queueEntryRelative = queueEntryDate ? getRelativeTime(queueEntryDate) : "";
+
+  let trailersHTML = "";
+  if (vehicle.placa2 || vehicle.placa3) {
+    trailersHTML = `
+      <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+        ${vehicle.placa2 ? `<span class="plate-badge plate-badge-trailer" style="font-size: 0.7rem;">Reboque 1: ${formatPlateString(vehicle.placa2)}</span>` : ""}
+        ${vehicle.placa3 ? `<span class="plate-badge plate-badge-trailer" style="font-size: 0.7rem;">Reboque 2: ${formatPlateString(vehicle.placa3)}</span>` : ""}
+      </div>
+    `;
+  }
+
+  els.locationModalBody.innerHTML = `
+    <!-- Header Summary Card -->
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span class="plate-badge plate-badge-main" style="font-size: 0.92rem; padding: 4px 10px; letter-spacing: 0.05em;">${formattedPlate}</span>
+        <span class="frota-badge ${vehicle.frota ? 'frota' : 'terceiro'}" style="font-size: 0.72rem;">
+          ${vehicle.frota ? '<i data-lucide="shield-check" style="width:11px;height:11px;"></i> Frota' : '<i data-lucide="user" style="width:11px;height:11px;"></i> Não Frota'}
+        </span>
+      </div>
+      <div style="font-size: 0.86rem; font-weight: 600; color: var(--text-primary); margin-top: 6px;">
+        ${vehicle.tipo || 'Tipo não informado'}
+      </div>
+      <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">
+        Cooperado: <strong style="color: var(--text-secondary);">${vehicle.nomeCooperado || 'Não informado'}</strong>
+      </div>
+      ${trailersHTML}
+    </div>
+
+    <!-- Location & Tracker Info Cards -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <!-- Local de Entrada (Cidade/UF) -->
+      <div style="background: ${hasLocation ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${hasLocation ? 'rgba(16, 185, 129, 0.35)' : 'var(--border-color)'}; border-radius: 10px; padding: 12px 14px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <i data-lucide="map-pin" style="width: 16px; height: 16px; color: ${hasLocation ? 'var(--accent)' : 'var(--text-muted)'};"></i>
+          <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: ${hasLocation ? 'var(--accent)' : 'var(--text-muted)'};">
+            Local de Entrada (Cidade / UF)
+          </span>
+        </div>
+        <div style="font-size: 1.05rem; font-weight: 700; color: ${hasLocation ? 'var(--text-primary)' : 'var(--text-muted)'}; padding-left: 24px;">
+          ${locationText}
+        </div>
+      </div>
+
+      <!-- Data/Hora do Rastreador -->
+      <div style="background: ${hasDthLocal ? 'rgba(96, 165, 250, 0.08)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${hasDthLocal ? 'rgba(96, 165, 250, 0.35)' : 'var(--border-color)'}; border-radius: 10px; padding: 12px 14px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <i data-lucide="radio" style="width: 16px; height: 16px; color: ${hasDthLocal ? 'var(--info)' : 'var(--text-muted)'};"></i>
+          <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: ${hasDthLocal ? 'var(--info)' : 'var(--text-muted)'};">
+            Data / Hora do Rastreador
+          </span>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 8px; padding-left: 24px; flex-wrap: wrap;">
+          <span style="font-size: 0.95rem; font-weight: 600; color: ${hasDthLocal ? 'var(--text-primary)' : 'var(--text-muted)'};">
+            ${dthLocalFormatted}
+          </span>
+          ${dthLocalRelative ? `<span style="font-size: 0.75rem; color: var(--text-muted);">(${dthLocalRelative})</span>` : ""}
+        </div>
+      </div>
+
+      <!-- Fila Atual e Entrada no Sistema -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <i data-lucide="layers" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+          <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: var(--text-muted);">
+            Fila Atual & Entrada no Sistema
+          </span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-left: 24px; font-size: 0.82rem; flex-wrap: wrap; gap: 4px;">
+          <span style="color: var(--text-primary); font-weight: 600;">Fila: ${vehicle.descFila || 'Não especificada'}</span>
+          <span style="color: var(--text-muted);">Entrou há: <strong style="color: var(--accent);">${queueEntryRelative || 'N/D'}</strong></span>
+        </div>
+        <div style="padding-left: 24px; font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+          Registro no sistema: ${queueEntryFormatted}
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (els.locationModalBackdrop) {
+    els.locationModalBackdrop.classList.add("show");
+  }
+  lucide.createIcons();
+}
+
+function closeLocationModal() {
+  if (els.locationModalBackdrop) {
+    els.locationModalBackdrop.classList.remove("show");
+  }
 }
 
 // AUTO REFRESH TIMER MECHANISMS

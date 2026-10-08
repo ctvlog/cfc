@@ -874,6 +874,29 @@
     </div>
   </div>
 
+  <!-- VEHICLE LOCATION MODAL -->
+  <div class="modal-backdrop" id="location-modal-backdrop">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--accent-bg-glow); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--accent);">
+            <i data-lucide="map-pin" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title" id="location-modal-title">Rastreamento de Entrada</h3>
+            <span style="font-size: 0.72rem; color: var(--text-muted);" id="location-modal-subtitle">Localização no momento de entrada na fila</span>
+          </div>
+        </div>
+        <button class="modal-close" id="location-modal-close" type="button" title="Fechar">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="location-modal-body" style="padding: 1.25rem;">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </div>
+  </div>
+
   <!-- VEHICLE FORM MODAL -->
   <div class="modal-backdrop" id="vehicle-modal-backdrop">
     <div class="modal-card">
@@ -1247,7 +1270,7 @@
   </div>
 
   <!-- Main JavaScript File -->
-  <script src="app.js?v=1.1.8"></script>
+  <script src="app.js?v=1.1.9"></script>
 </body>
 
 </html>

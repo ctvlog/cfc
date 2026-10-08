@@ -1692,6 +1692,29 @@
   </div>
 
   <!-- ==========================================================================
+       LOCATION MODAL / BOTTOM SHEET
+       ========================================================================== -->
+  <div class="modal-backdrop" id="location-modal-backdrop">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+
+      <div class="sheet-header">
+        <div>
+          <h3 class="sheet-title" id="location-modal-title">Rastreamento de Entrada</h3>
+          <span style="font-size: 0.72rem; color: var(--text-muted);" id="location-modal-subtitle">Localização no momento de entrada na fila</span>
+        </div>
+        <button class="sheet-close-btn" id="location-modal-close" title="Fechar">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+
+      <div id="location-content-container" style="padding: 1rem;">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
        JAVASCRIPT APPLICATION LOGIC
        ========================================================================== -->
   <script>
@@ -1771,6 +1794,13 @@
       refusalsModalSubtitle: document.getElementById("refusals-modal-subtitle"),
       refusalsModalClose: document.getElementById("refusals-modal-close"),
       refusalsTimelineContainer: document.getElementById("refusals-timeline-container"),
+
+      // Location Modal
+      locationModalBackdrop: document.getElementById("location-modal-backdrop"),
+      locationModalTitle: document.getElementById("location-modal-title"),
+      locationModalSubtitle: document.getElementById("location-modal-subtitle"),
+      locationModalClose: document.getElementById("location-modal-close"),
+      locationContentContainer: document.getElementById("location-content-container"),
 
       // Bottom Dock Buttons
       dockBtnQueues: document.getElementById("dock-btn-queues"),
@@ -2241,7 +2271,7 @@
                 <div class="card-left-identity">
                   <div class="position-avatar">${idx + 1}º</div>
                   <div class="plates-container">
-                    <span class="plate-chip" title="Placa Principal">${formatPlate(vehicle.placa)}</span>
+                    <span class="plate-chip plate-chip-clickable" data-plate="${vehicle.placa}" title="Placa Principal • Clique para ver localização de entrada">${formatPlate(vehicle.placa)}</span>
                     ${vehicle.placa2 ? `<span class="plate-chip trailer" title="Reboque 1"><i data-lucide="box" style="width: 10px; height: 10px;"></i> ${formatPlate(vehicle.placa2)}</span>` : ''}
                     ${vehicle.placa3 ? `<span class="plate-chip trailer" title="Reboque 2"><i data-lucide="box" style="width: 10px; height: 10px;"></i> ${formatPlate(vehicle.placa3)}</span>` : ''}
                   </div>
@@ -2282,6 +2312,15 @@
               </div>
             `;
 
+            // Location plate click
+            const plateChipEl = card.querySelector(".plate-chip-clickable");
+            if (plateChipEl) {
+              plateChipEl.addEventListener("click", (e) => {
+                e.stopPropagation();
+                openLocationModal(vehicle);
+              });
+            }
+
             // Refusals click
             const recBtn = card.querySelector(".badge-recusa-btn");
             if (recBtn) {
@@ -2314,7 +2353,7 @@
                   ${idx + 1}º
                 </td>
                 <td>
-                  <div style="font-weight: 800; font-family: var(--font-heading); color: var(--accent); letter-spacing: 0.04em;">
+                  <div class="plate-table-clickable" data-plate="${vehicle.placa}" style="font-weight: 800; font-family: var(--font-heading); color: var(--accent); letter-spacing: 0.04em; cursor: pointer;" title="Clique para ver localização de entrada">
                     ${formatPlate(vehicle.placa)}
                   </div>
                   ${vehicle.placa2 ? `<span style="font-size: 0.65rem; color: var(--info);">${formatPlate(vehicle.placa2)}</span>` : ''}
@@ -2359,6 +2398,18 @@
               </tbody>
             </table>
           `;
+
+          // Plate click inside dense table to open location modal
+          tableWrapper.querySelectorAll(".plate-table-clickable").forEach(btn => {
+            const plate = btn.getAttribute("data-plate");
+            const v = vehicles.find(item => item.placa === plate);
+            if (v) {
+              btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                openLocationModal(v);
+              });
+            }
+          });
 
           // Refusals click inside dense table
           tableWrapper.querySelectorAll(".badge-recusa-btn").forEach(btn => {
@@ -2454,6 +2505,83 @@
 
     function closeRefusalsModal() {
       dom.refusalsModalBackdrop.classList.remove("show");
+    }
+
+    // LOCATION MODAL LOGIC (MOBILE)
+    function openLocationModal(vehicle) {
+      if (!vehicle) return;
+
+      const formattedPlate = formatPlate(vehicle.placa);
+      dom.locationModalTitle.textContent = `Localização: ${formattedPlate}`;
+      dom.locationModalSubtitle.textContent = `${vehicle.nomeCooperado || 'Cooperado'} • ${vehicle.tipo || 'Veículo'}`;
+
+      const hasLocation = Boolean(vehicle.local_entrada && String(vehicle.local_entrada).trim() && String(vehicle.local_entrada).trim().toUpperCase() !== "NULL");
+      const hasDthLocal = Boolean(vehicle.dth_local && String(vehicle.dth_local).trim() && String(vehicle.dth_local).trim().toUpperCase() !== "NULL");
+
+      const locationText = hasLocation ? String(vehicle.local_entrada).trim() : "Local não registrado pelo rastreador";
+      const dthLocalFormatted = hasDthLocal ? formatDateTime(vehicle.dth_local) : "Data/hora não registrada pelo rastreador";
+      const dthLocalRelative = hasDthLocal ? getRelativeTime(vehicle.dth_local) : "";
+
+      const queueEntryDate = vehicle.created_at || vehicle.dthRef;
+      const queueEntryFormatted = queueEntryDate ? formatDateTime(queueEntryDate) : "Não informada";
+      const queueEntryRelative = queueEntryDate ? getRelativeTime(queueEntryDate) : "";
+
+      dom.locationContentContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Local de Entrada -->
+          <div style="background: ${hasLocation ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${hasLocation ? 'rgba(16, 185, 129, 0.35)' : 'var(--border-color)'}; border-radius: 12px; padding: 12px 14px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <i data-lucide="map-pin" style="width: 16px; height: 16px; color: ${hasLocation ? 'var(--accent)' : 'var(--text-muted)'};"></i>
+              <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: ${hasLocation ? 'var(--accent)' : 'var(--text-muted)'};">
+                Local de Entrada (Cidade / UF)
+              </span>
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: ${hasLocation ? 'var(--text-main)' : 'var(--text-muted)'}; padding-left: 24px;">
+              ${locationText}
+            </div>
+          </div>
+
+          <!-- Data/Hora do Rastreador -->
+          <div style="background: ${hasDthLocal ? 'rgba(96, 165, 250, 0.08)' : 'rgba(255,255,255,0.02)'}; border: 1px solid ${hasDthLocal ? 'rgba(96, 165, 250, 0.35)' : 'var(--border-color)'}; border-radius: 12px; padding: 12px 14px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <i data-lucide="radio" style="width: 16px; height: 16px; color: ${hasDthLocal ? 'var(--info)' : 'var(--text-muted)'};"></i>
+              <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: ${hasDthLocal ? 'var(--info)' : 'var(--text-muted)'};">
+                Data / Hora do Rastreador
+              </span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 8px; padding-left: 24px; flex-wrap: wrap;">
+              <span style="font-size: 0.95rem; font-weight: 600; color: ${hasDthLocal ? 'var(--text-main)' : 'var(--text-muted)'};">
+                ${dthLocalFormatted}
+              </span>
+              ${dthLocalRelative ? `<span style="font-size: 0.75rem; color: var(--text-muted);">(${dthLocalRelative})</span>` : ""}
+            </div>
+          </div>
+
+          <!-- Fila e Entrada no Sistema -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <i data-lucide="layers" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+              <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: var(--text-muted);">
+                Fila Atual & Entrada no Sistema
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-left: 24px; font-size: 0.82rem;">
+              <span style="color: var(--text-main); font-weight: 600;">Fila: ${vehicle.descFila || 'Não especificada'}</span>
+              <span style="color: var(--text-muted);">Entrou há: <strong style="color: var(--accent);">${queueEntryRelative || 'N/D'}</strong></span>
+            </div>
+            <div style="padding-left: 24px; font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+              Registro no sistema: ${queueEntryFormatted}
+            </div>
+          </div>
+        </div>
+      `;
+
+      dom.locationModalBackdrop.classList.add("show");
+      lucide.createIcons();
+    }
+
+    function closeLocationModal() {
+      dom.locationModalBackdrop.classList.remove("show");
     }
 
     // ==========================================================================
@@ -2643,8 +2771,16 @@
         if (e.target === dom.refusalsModalBackdrop) closeRefusalsModal();
       });
 
+      dom.locationModalClose.addEventListener("click", closeLocationModal);
+      dom.locationModalBackdrop.addEventListener("click", (e) => {
+        if (e.target === dom.locationModalBackdrop) closeLocationModal();
+      });
+
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeRefusalsModal();
+        if (e.key === "Escape") {
+          closeRefusalsModal();
+          closeLocationModal();
+        }
       });
     }
   </script>
