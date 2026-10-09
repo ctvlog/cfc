@@ -75,7 +75,21 @@ let appState = {
 
   // Link Cooperados modal state
   linkingDigisacItem: null,
-  stagedCooperadosIds: []
+  stagedCooperadosIds: [],
+
+  // Ticket Florestal (xcvt_comprovantes) state
+  tickets: [],
+  ticketsSearch: "",
+  ticketsStatusFilter: "pending",
+  ticketsPeriodFilter: "30",
+  ticketsRegiaoFilter: "all",
+  ticketsSort: "created_at_desc",
+  ticketsPage: 0,
+  ticketsPageSize: 30,
+  ticketsTotalCount: 0,
+  ticketsTotalPages: 0,
+  ticketsStats: { total: 0, pending: 0, approved: 0, totalPesoLiq: 0 },
+  activeViewingTicket: null
 };
 
 // UI Elements
@@ -128,9 +142,16 @@ const els = {
 
   // Admin and CRUD elements
   sidebarAdminNav: document.getElementById("sidebar-admin-nav"),
+  menuCategoryFila: document.getElementById("menu-category-fila"),
+  menuCategoryAdmin: document.getElementById("menu-category-admin"),
+  menuCategoryComprovantes: document.getElementById("menu-category-comprovantes"),
   navBtnQueues: document.getElementById("nav-btn-queues"),
+  navBtnTicketFlorestal: document.getElementById("nav-btn-ticket-florestal"),
+  ticketFlorestalSection: document.getElementById("ticket-florestal-section"),
+  btnRefreshTicketFlorestal: document.getElementById("btn-refresh-ticket-florestal"),
   navBtnMovements: document.getElementById("nav-btn-movements"),
-  navBtnVehicles: document.getElementById("nav-btn-vehicles"),
+  navBtnVehicles: document.getElementById("nav-btn-vehicles-admin"),
+  navBtnVehiclesAdmin: document.getElementById("nav-btn-vehicles-admin"),
   navBtnCooperados: document.getElementById("nav-btn-cooperados"),
   vehiclesCrudSection: document.getElementById("vehicles-crud-section"),
   cooperadosCrudSection: document.getElementById("cooperados-crud-section"),
@@ -281,7 +302,74 @@ const els = {
   profileEditUuid: document.getElementById("profile-edit-uuid"),
   profileEditIdContato: document.getElementById("profile-edit-id-contato"),
   btnCancelProfile: document.getElementById("btn-cancel-profile"),
-  btnSaveProfile: document.getElementById("btn-save-profile")
+  btnSaveProfile: document.getElementById("btn-save-profile"),
+
+  // Ticket Florestal elements
+  btnRefreshTickets: document.getElementById("btn-refresh-tickets"),
+  crudTicketsTbody: document.getElementById("crud-tickets-tbody"),
+  statTicketsTotal: document.getElementById("stat-tickets-total"),
+  statTicketsPending: document.getElementById("stat-tickets-pending"),
+  statTicketsApproved: document.getElementById("stat-tickets-approved"),
+  statTicketsPesoliq: document.getElementById("stat-tickets-pesoliq"),
+  ticketsSearchInput: document.getElementById("tickets-search-input"),
+  ticketsStatusFilter: document.getElementById("tickets-status-filter"),
+  ticketsPeriodFilter: document.getElementById("tickets-period-filter"),
+  ticketsRegiaoFilter: document.getElementById("tickets-regiao-filter"),
+  ticketsSortSelect: document.getElementById("tickets-sort-select"),
+  ticketsPagesizeSelect: document.getElementById("tickets-pagesize-select"),
+  btnResetTicketsFilters: document.getElementById("btn-reset-tickets-filters"),
+  ticketsPaginationInfo: document.getElementById("tickets-pagination-info"),
+  btnFirstTicketsPage: document.getElementById("btn-first-tickets-page"),
+  btnPrevTicketsPage: document.getElementById("btn-prev-tickets-page"),
+  btnNextTicketsPage: document.getElementById("btn-next-tickets-page"),
+  btnLastTicketsPage: document.getElementById("btn-last-tickets-page"),
+
+  // Ticket Modal elements
+  ticketModalBackdrop: document.getElementById("ticket-modal-backdrop"),
+  ticketModalCard: document.getElementById("ticket-modal-card"),
+  ticketModalTitle: document.getElementById("ticket-modal-title"),
+  ticketModalSubtitle: document.getElementById("ticket-modal-subtitle"),
+  ticketModalClose: document.getElementById("ticket-modal-close"),
+  btnToggleTicketImg: document.getElementById("btn-toggle-ticket-img"),
+  btnToggleTicketImgText: document.getElementById("btn-toggle-ticket-img-text"),
+  ticketImagePanel: document.getElementById("ticket-image-panel"),
+  ticketImageViewport: document.getElementById("ticket-image-viewport"),
+  ticketZoomableImg: document.getElementById("ticket-zoomable-img"),
+  ticketImgLoading: document.getElementById("ticket-img-loading"),
+  ticketImgError: document.getElementById("ticket-img-error"),
+  ticketZoomBadge: document.getElementById("ticket-zoom-badge"),
+  btnTicketZoomIn: document.getElementById("btn-ticket-zoom-in"),
+  btnTicketZoomOut: document.getElementById("btn-ticket-zoom-out"),
+  btnTicketZoomReset: document.getElementById("btn-ticket-zoom-reset"),
+  btnTicketRotate: document.getElementById("btn-ticket-rotate"),
+  btnTicketOpenTab: document.getElementById("btn-ticket-open-tab"),
+  btnCancelTicket: document.getElementById("btn-cancel-ticket"),
+  ticketForm: document.getElementById("ticket-form"),
+  ticketEditId: document.getElementById("ticket-edit-id"),
+  ticketAiBox: document.getElementById("ticket-ai-box"),
+  ticketAiText: document.getElementById("ticket-ai-text"),
+  ticketEditPlaca: document.getElementById("ticket-edit-placa"),
+  ticketEditProcesso: document.getElementById("ticket-edit-processo"),
+  ticketEditData: document.getElementById("ticket-edit-data"),
+  ticketEditRegiao: document.getElementById("ticket-edit-regiao"),
+  ticketEditTalhao: document.getElementById("ticket-edit-talhao"),
+  ticketEditDestino: document.getElementById("ticket-edit-destino"),
+  ticketEditPesoliq: document.getElementById("ticket-edit-pesoliq"),
+  ticketEditPesobruto: document.getElementById("ticket-edit-pesobruto"),
+  ticketEditNf: document.getElementById("ticket-edit-nf"),
+  ticketEditOrigem: document.getElementById("ticket-edit-origem"),
+  ticketEditFazenda: document.getElementById("ticket-edit-fazenda"),
+  ticketEditAprovado: document.getElementById("ticket-edit-aprovado"),
+  btnSaveTicket: document.getElementById("btn-save-ticket"),
+  btnSaveApproveTicket: document.getElementById("btn-save-approve-ticket"),
+
+  // Ticket AI Message Modal
+  ticketAiModalBackdrop: document.getElementById("ticket-ai-modal-backdrop"),
+  ticketAiModalClose: document.getElementById("ticket-ai-modal-close"),
+  ticketAiModalSubtitle: document.getElementById("ticket-ai-modal-subtitle"),
+  ticketAiModalContent: document.getElementById("ticket-ai-modal-content"),
+  btnCloseTicketAiModal: document.getElementById("btn-close-ticket-ai-modal"),
+  btnEditFromAiModal: document.getElementById("btn-edit-from-ai-modal")
 };
 
 // TOAST SYSTEM
@@ -449,6 +537,7 @@ async function handleSignIn(user) {
 
   els.authSection.classList.add("hidden");
   els.dashboardSection.classList.remove("hidden");
+  lucide.createIcons();
 
   // Load sidebar collapsed state
   const sidebarSaved = localStorage.getItem("cfc_sidebar_collapsed");
@@ -467,40 +556,33 @@ async function handleSignIn(user) {
 
     if (error) throw error;
 
+    // Categoria de Comprovantes acessível para todos os usuários autenticados
+    if (els.menuCategoryComprovantes) els.menuCategoryComprovantes.classList.remove("hidden");
+
     if (profile && profile.role === 'admin') {
       appState.isAdmin = true;
       document.querySelector(".user-role").textContent = "Administrador";
       els.sidebarAdminNav.classList.remove("hidden");
-      els.navBtnVehicles.classList.remove("hidden");
-      els.navBtnCooperados.classList.remove("hidden");
-      els.navBtnAccess.classList.remove("hidden");
-      if (els.navBtnProfiles) els.navBtnProfiles.classList.remove("hidden");
+      if (els.menuCategoryAdmin) els.menuCategoryAdmin.classList.remove("hidden");
       loadAdminAuxiliaryData();
     } else {
       appState.isAdmin = false;
       document.querySelector(".user-role").textContent = "Operador";
       els.sidebarAdminNav.classList.remove("hidden");
-      els.navBtnVehicles.classList.add("hidden");
-      els.navBtnCooperados.classList.add("hidden");
-      els.navBtnAccess.classList.add("hidden");
-      if (els.navBtnProfiles) els.navBtnProfiles.classList.add("hidden");
-      switchView("queues");
+      if (els.menuCategoryAdmin) els.menuCategoryAdmin.classList.add("hidden");
     }
   } catch (err) {
     console.error("Erro ao verificar papel do usuario:", err);
     appState.isAdmin = false;
     document.querySelector(".user-role").textContent = "Operador";
     els.sidebarAdminNav.classList.remove("hidden");
-    els.navBtnVehicles.classList.add("hidden");
-    els.navBtnCooperados.classList.add("hidden");
-    els.navBtnAccess.classList.add("hidden");
-    if (els.navBtnProfiles) els.navBtnProfiles.classList.add("hidden");
-    switchView("queues");
+    if (els.menuCategoryAdmin) els.menuCategoryAdmin.classList.add("hidden");
+    if (els.menuCategoryComprovantes) els.menuCategoryComprovantes.classList.remove("hidden");
   }
 
   // Check if redirected with specific view in sessionStorage
   const gotoView = sessionStorage.getItem("cfc_goto_view");
-  if (gotoView && appState.isAdmin) {
+  if (gotoView && (appState.isAdmin || gotoView === "ticket-florestal")) {
     sessionStorage.removeItem("cfc_goto_view");
     switchView(gotoView);
   } else {
@@ -524,15 +606,14 @@ function handleSignOut() {
   els.dashboardSection.classList.add("hidden");
 
   // Reset navigation states
-  els.navBtnQueues.classList.add("active");
-  els.navBtnMovements.classList.remove("active");
-  els.navBtnVehicles.classList.remove("active");
-  els.navBtnCooperados.classList.remove("active");
-  els.navBtnAccess.classList.remove("active");
+  document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
+  if (els.navBtnQueues) els.navBtnQueues.classList.add("active");
   els.vehiclesCrudSection.classList.add("hidden");
   els.cooperadosCrudSection.classList.add("hidden");
   els.accessCrudSection.classList.add("hidden");
   els.movementsTimelineSection.classList.add("hidden");
+  if (els.ticketFlorestalSection) els.ticketFlorestalSection.classList.add("hidden");
+  if (els.menuCategoryComprovantes) els.menuCategoryComprovantes.classList.add("hidden");
   els.queuesViewport.classList.remove("hidden");
   const controlBar = document.querySelector(".control-bar");
   if (controlBar) controlBar.classList.remove("hidden");
@@ -542,6 +623,7 @@ function handleSignOut() {
   els.crudVehiclesTbody.innerHTML = "";
   els.crudCooperadosTbody.innerHTML = "";
   els.crudAccessTbody.innerHTML = "";
+  if (els.crudTicketsTbody) els.crudTicketsTbody.innerHTML = "";
   els.loginEmail.value = "";
   els.loginPass.value = "";
 }
@@ -675,12 +757,239 @@ function setupEventListeners() {
     });
   }
 
-  // Admin Navigation event listeners
-  els.navBtnQueues.addEventListener("click", () => switchView("queues"));
-  els.navBtnMovements.addEventListener("click", () => switchView("movements"));
-  els.navBtnVehicles.addEventListener("click", () => switchView("vehicles"));
-  els.navBtnCooperados.addEventListener("click", () => switchView("cooperados"));
-  els.btnRefreshMovements.addEventListener("click", () => loadMovementsData());
+  // Sub-menu category accordion toggles
+  document.querySelectorAll(".menu-category-header").forEach(header => {
+    header.addEventListener("click", () => {
+      const category = header.closest(".menu-category");
+      if (category) {
+        category.classList.toggle("is-collapsed");
+      }
+    });
+  });
+
+  // Navigation event listeners
+  if (els.navBtnQueues) els.navBtnQueues.addEventListener("click", () => switchView("queues"));
+  if (els.navBtnMovements) els.navBtnMovements.addEventListener("click", () => switchView("movements"));
+  if (els.navBtnVehiclesAdmin) els.navBtnVehiclesAdmin.addEventListener("click", () => switchView("vehicles"));
+  if (els.navBtnCooperados) els.navBtnCooperados.addEventListener("click", () => switchView("cooperados"));
+  if (els.navBtnTicketFlorestal) els.navBtnTicketFlorestal.addEventListener("click", () => switchView("ticket-florestal"));
+  if (els.btnRefreshTickets) els.btnRefreshTickets.addEventListener("click", () => loadTicketsData(true));
+  if (els.btnRefreshMovements) els.btnRefreshMovements.addEventListener("click", () => loadMovementsData());
+
+  // Ticket Florestal Filters & Search
+  if (els.ticketsSearchInput) {
+    const handleTicketsSearch = debounce(() => {
+      appState.ticketsSearch = els.ticketsSearchInput.value.trim();
+      appState.ticketsPage = 0;
+      loadTicketsData();
+    }, 300);
+    els.ticketsSearchInput.addEventListener("input", handleTicketsSearch);
+  }
+
+  if (els.ticketsStatusFilter) {
+    els.ticketsStatusFilter.addEventListener("change", (e) => {
+      appState.ticketsStatusFilter = e.target.value;
+      appState.ticketsPage = 0;
+      loadTicketsData();
+    });
+  }
+
+  if (els.ticketsPeriodFilter) {
+    els.ticketsPeriodFilter.addEventListener("change", (e) => {
+      appState.ticketsPeriodFilter = e.target.value;
+      appState.ticketsPage = 0;
+      loadTicketsData(true);
+    });
+  }
+
+  if (els.ticketsRegiaoFilter) {
+    els.ticketsRegiaoFilter.addEventListener("change", (e) => {
+      appState.ticketsRegiaoFilter = e.target.value;
+      appState.ticketsPage = 0;
+      loadTicketsData();
+    });
+  }
+
+  if (els.ticketsSortSelect) {
+    els.ticketsSortSelect.addEventListener("change", (e) => {
+      appState.ticketsSort = e.target.value;
+      appState.ticketsPage = 0;
+      loadTicketsData();
+    });
+  }
+
+  if (els.ticketsPagesizeSelect) {
+    els.ticketsPagesizeSelect.addEventListener("change", (e) => {
+      appState.ticketsPageSize = parseInt(e.target.value, 10) || 30;
+      appState.ticketsPage = 0;
+      loadTicketsData();
+    });
+  }
+
+  if (els.btnResetTicketsFilters) {
+    els.btnResetTicketsFilters.addEventListener("click", () => {
+      appState.ticketsSearch = "";
+      appState.ticketsStatusFilter = "pending";
+      appState.ticketsPeriodFilter = "30";
+      appState.ticketsRegiaoFilter = "all";
+      appState.ticketsSort = "created_at_desc";
+      appState.ticketsPage = 0;
+
+      if (els.ticketsSearchInput) els.ticketsSearchInput.value = "";
+      if (els.ticketsStatusFilter) els.ticketsStatusFilter.value = "pending";
+      if (els.ticketsPeriodFilter) els.ticketsPeriodFilter.value = "30";
+      if (els.ticketsRegiaoFilter) els.ticketsRegiaoFilter.value = "all";
+      if (els.ticketsSortSelect) els.ticketsSortSelect.value = "created_at_desc";
+      if (els.ticketsPagesizeSelect) els.ticketsPagesizeSelect.value = "30";
+
+      loadTicketsData(true);
+    });
+  }
+
+  // Ticket Florestal Pagination Controls
+  if (els.btnFirstTicketsPage) {
+    els.btnFirstTicketsPage.addEventListener("click", () => {
+      if (appState.ticketsPage > 0) {
+        appState.ticketsPage = 0;
+        loadTicketsData();
+      }
+    });
+  }
+  if (els.btnPrevTicketsPage) {
+    els.btnPrevTicketsPage.addEventListener("click", () => {
+      if (appState.ticketsPage > 0) {
+        appState.ticketsPage--;
+        loadTicketsData();
+      }
+    });
+  }
+  if (els.btnNextTicketsPage) {
+    els.btnNextTicketsPage.addEventListener("click", () => {
+      if (appState.ticketsPage < appState.ticketsTotalPages - 1) {
+        appState.ticketsPage++;
+        loadTicketsData();
+      }
+    });
+  }
+  if (els.btnLastTicketsPage) {
+    els.btnLastTicketsPage.addEventListener("click", () => {
+      if (appState.ticketsPage < appState.ticketsTotalPages - 1) {
+        appState.ticketsPage = appState.ticketsTotalPages - 1;
+        loadTicketsData();
+      }
+    });
+  }
+
+  // Ticket Florestal Modal Controls & Image Viewer Controls
+  if (els.ticketModalClose) els.ticketModalClose.addEventListener("click", closeTicketModal);
+  if (els.btnCancelTicket) els.btnCancelTicket.addEventListener("click", closeTicketModal);
+  if (els.ticketModalBackdrop) {
+    els.ticketModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === els.ticketModalBackdrop) closeTicketModal();
+    });
+  }
+  if (els.btnToggleTicketImg) {
+    els.btnToggleTicketImg.addEventListener("click", () => toggleTicketModalSplitView());
+  }
+  if (els.btnTicketZoomIn) {
+    els.btnTicketZoomIn.addEventListener("click", () => setTicketImageZoom(ticketViewerState.zoom * 1.25, true));
+  }
+  if (els.btnTicketZoomOut) {
+    els.btnTicketZoomOut.addEventListener("click", () => setTicketImageZoom(ticketViewerState.zoom / 1.25, true));
+  }
+  if (els.btnTicketZoomReset) {
+    els.btnTicketZoomReset.addEventListener("click", resetTicketImageTransform);
+  }
+  if (els.btnTicketRotate) {
+    els.btnTicketRotate.addEventListener("click", rotateTicketImage);
+  }
+
+  // Image Viewport Wheel and Pan interaction (Strictly contained inside viewport)
+  if (els.ticketImageViewport) {
+    // Wheel Zoom
+    els.ticketImageViewport.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.18 : 0.85;
+      setTicketImageZoom(ticketViewerState.zoom * zoomFactor, true);
+    }, { passive: false });
+
+    // Double-click to toggle 2.2x zoom
+    els.ticketImageViewport.addEventListener("dblclick", () => {
+      if (ticketViewerState.zoom > 1.1) {
+        resetTicketImageTransform();
+      } else {
+        setTicketImageZoom(2.2, true);
+      }
+    });
+
+    // Mouse drag / Pan
+    els.ticketImageViewport.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return; // Only left click
+      ticketViewerState.isDragging = true;
+      ticketViewerState.startX = e.clientX - ticketViewerState.panX;
+      ticketViewerState.startY = e.clientY - ticketViewerState.panY;
+      els.ticketImageViewport.classList.add("is-panning");
+    });
+
+    // Touch support (drag)
+    els.ticketImageViewport.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        ticketViewerState.isDragging = true;
+        ticketViewerState.startX = e.touches[0].clientX - ticketViewerState.panX;
+        ticketViewerState.startY = e.touches[0].clientY - ticketViewerState.panY;
+        els.ticketImageViewport.classList.add("is-panning");
+      }
+    }, { passive: true });
+
+    els.ticketImageViewport.addEventListener("touchmove", (e) => {
+      if (!ticketViewerState.isDragging || e.touches.length !== 1) return;
+      ticketViewerState.panX = e.touches[0].clientX - ticketViewerState.startX;
+      ticketViewerState.panY = e.touches[0].clientY - ticketViewerState.startY;
+      applyTicketImageTransform(false);
+    }, { passive: true });
+
+    els.ticketImageViewport.addEventListener("touchend", () => {
+      ticketViewerState.isDragging = false;
+      els.ticketImageViewport.classList.remove("is-panning");
+    });
+  }
+
+  window.addEventListener("mousemove", (e) => {
+    if (!ticketViewerState.isDragging) return;
+    e.preventDefault();
+    ticketViewerState.panX = e.clientX - ticketViewerState.startX;
+    ticketViewerState.panY = e.clientY - ticketViewerState.startY;
+    applyTicketImageTransform(false);
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (ticketViewerState.isDragging) {
+      ticketViewerState.isDragging = false;
+      if (els.ticketImageViewport) els.ticketImageViewport.classList.remove("is-panning");
+    }
+  });
+
+  if (els.ticketForm) {
+    els.ticketForm.addEventListener("submit", (e) => handleTicketFormSubmit(e, false));
+  }
+  if (els.btnSaveApproveTicket) {
+    els.btnSaveApproveTicket.addEventListener("click", (e) => handleTicketFormSubmit(e, true));
+  }
+
+  // Ticket AI Modal Controls
+  if (els.ticketAiModalClose) els.ticketAiModalClose.addEventListener("click", closeTicketAiModal);
+  if (els.btnCloseTicketAiModal) els.btnCloseTicketAiModal.addEventListener("click", closeTicketAiModal);
+  if (els.ticketAiModalBackdrop) {
+    els.ticketAiModalBackdrop.addEventListener("click", (e) => {
+      if (e.target === els.ticketAiModalBackdrop) closeTicketAiModal();
+    });
+  }
+  if (els.btnEditFromAiModal) {
+    els.btnEditFromAiModal.addEventListener("click", () => {
+      closeTicketAiModal();
+      if (appState.activeViewingTicket) openTicketModal(appState.activeViewingTicket);
+    });
+  }
   els.movementQueueFilter.addEventListener("change", () => loadMovementsData());
 
   // Vehicle Modal Open/Close
@@ -1602,19 +1911,44 @@ function switchView(view) {
   els.accessCrudSection.classList.add("hidden");
   if (els.profilesCrudSection) els.profilesCrudSection.classList.add("hidden");
   els.movementsTimelineSection.classList.add("hidden");
+  if (els.ticketFlorestalSection) els.ticketFlorestalSection.classList.add("hidden");
   if (controlBar) controlBar.classList.add("hidden");
 
-  // Reset active navigation styles
-  els.navBtnQueues.classList.remove("active");
-  els.navBtnMovements.classList.remove("active");
-  els.navBtnVehicles.classList.remove("active");
-  els.navBtnCooperados.classList.remove("active");
-  els.navBtnAccess.classList.remove("active");
-  if (els.navBtnProfiles) els.navBtnProfiles.classList.remove("active");
+  // Reset active navigation styles on all nav-items
+  document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
+  // Mark all nav-items matching the active view as active
+  document.querySelectorAll(`.nav-item[data-view="${view}"]`).forEach(item => item.classList.add("active"));
+
+  // Update application header title & subtitle dynamically
+  const appHeaderTitle = document.querySelector(".header-title");
+  const appHeaderSubtitle = document.querySelector(".header-subtitle");
+  if (appHeaderTitle && appHeaderSubtitle) {
+    if (view === "ticket-florestal") {
+      appHeaderTitle.textContent = "Ticket Florestal";
+      appHeaderSubtitle.textContent = "Comprovantes & Auditoria IA | v1.06";
+    } else if (view === "vehicles") {
+      appHeaderTitle.textContent = "Gestão de Veículos";
+      appHeaderSubtitle.textContent = "Administrativo | v1.06";
+    } else if (view === "cooperados") {
+      appHeaderTitle.textContent = "Gestão de Cooperados";
+      appHeaderSubtitle.textContent = "Administrativo | v1.06";
+    } else if (view === "access") {
+      appHeaderTitle.textContent = "Controle de Acessos";
+      appHeaderSubtitle.textContent = "Administrativo | v1.06";
+    } else if (view === "profiles") {
+      appHeaderTitle.textContent = "Perfis de Usuários";
+      appHeaderSubtitle.textContent = "Administrativo | v1.06";
+    } else if (view === "movements") {
+      appHeaderTitle.textContent = "Movimentações";
+      appHeaderSubtitle.textContent = "Fila de Carregamento | v1.06";
+    } else {
+      appHeaderTitle.textContent = "Filas de Carregamento";
+      appHeaderSubtitle.textContent = "Central de Fretes | v1.06";
+    }
+  }
 
   if (view === "vehicles") {
     els.vehiclesCrudSection.classList.remove("hidden");
-    els.navBtnVehicles.classList.add("active");
 
     stopAutoRefresh();
     els.refreshCountdownText.textContent = "Atualização pausada";
@@ -1623,7 +1957,6 @@ function switchView(view) {
     loadVehiclesData(true);
   } else if (view === "cooperados") {
     els.cooperadosCrudSection.classList.remove("hidden");
-    els.navBtnCooperados.classList.add("active");
 
     stopAutoRefresh();
     els.refreshCountdownText.textContent = "Atualização pausada";
@@ -1632,7 +1965,6 @@ function switchView(view) {
     loadCooperadosData(true);
   } else if (view === "access") {
     els.accessCrudSection.classList.remove("hidden");
-    els.navBtnAccess.classList.add("active");
 
     stopAutoRefresh();
     els.refreshCountdownText.textContent = "Atualização pausada";
@@ -1641,16 +1973,23 @@ function switchView(view) {
     loadAccessData(true);
   } else if (view === "profiles") {
     if (els.profilesCrudSection) els.profilesCrudSection.classList.remove("hidden");
-    if (els.navBtnProfiles) els.navBtnProfiles.classList.add("active");
 
     stopAutoRefresh();
     els.refreshCountdownText.textContent = "Atualização pausada";
     els.refreshIndicatorDot.className = "indicator-dot inactive";
 
     loadProfilesData(true);
+  } else if (view === "ticket-florestal") {
+    if (els.ticketFlorestalSection) els.ticketFlorestalSection.classList.remove("hidden");
+
+    stopAutoRefresh();
+    els.refreshCountdownText.textContent = "Atualização pausada";
+    els.refreshIndicatorDot.className = "indicator-dot inactive";
+
+    loadTicketsData(true);
+    lucide.createIcons();
   } else if (view === "movements") {
     els.movementsTimelineSection.classList.remove("hidden");
-    els.navBtnMovements.classList.add("active");
 
     stopAutoRefresh();
     els.refreshCountdownText.textContent = "Atualização pausada";
@@ -1658,10 +1997,9 @@ function switchView(view) {
 
     loadMovementsData();
   } else {
-    // default/queues view
+    // default/queues view ("Grid")
     els.queuesViewport.classList.remove("hidden");
     if (controlBar) controlBar.classList.remove("hidden");
-    els.navBtnQueues.classList.add("active");
 
     if (appState.autoRefresh.active) {
       startAutoRefresh();
@@ -4168,6 +4506,744 @@ async function handleSaveProfile(e) {
       els.btnSaveProfile.innerHTML = `<i data-lucide="check" style="width: 14px; height: 14px;"></i> <span>Salvar ID de Contato</span>`;
       lucide.createIcons();
     }
+  }
+}
+
+// ==========================================
+// TICKET FLORESTAL (xcvt_comprovantes) LOGIC
+// ==========================================
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function loadTicketsData(fetchStats = false) {
+  if (!els.crudTicketsTbody) return;
+
+  els.crudTicketsTbody.innerHTML = `
+    <tr>
+      <td colspan="12" style="text-align: center; padding: 2.5rem;">
+        <div class="spinner" style="margin: 0 auto 10px auto; border-top-color: var(--accent);"></div>
+        <span style="color: var(--text-muted); font-size: 0.85rem;">Carregando comprovantes extraídos pela IA...</span>
+      </td>
+    </tr>
+  `;
+
+  const page = appState.ticketsPage;
+  const limit = appState.ticketsPageSize || 30;
+  const from = page * limit;
+  const to = from + limit - 1;
+  const search = appState.ticketsSearch;
+  const statusFilter = appState.ticketsStatusFilter;
+  const periodFilter = appState.ticketsPeriodFilter;
+  const regiaoFilter = appState.ticketsRegiaoFilter;
+  const sort = appState.ticketsSort;
+
+  try {
+    let query = supabaseClient
+      .from("xcvt_comprovantes")
+      .select("*", { count: "exact" });
+
+    // Text Search
+    if (search) {
+      query = query.or(
+        `ai_placa.ilike.%${search}%,ai_processo.ilike.%${search}%,ai_regiao.ilike.%${search}%,ai_talhao.ilike.%${search}%,ai_destino.ilike.%${search}%,ai_nf.ilike.%${search}%,origem.ilike.%${search}%,fazenda.ilike.%${search}%`
+      );
+    }
+
+    // Status Filter
+    if (statusFilter === "approved") {
+      query = query.eq("aprovado", true);
+    } else if (statusFilter === "pending") {
+      query = query.or("aprovado.eq.false,aprovado.is.null");
+    }
+
+    // Period / Date Limit Filter (Proteção para banco com 10k+ registros)
+    if (periodFilter && periodFilter !== "all") {
+      const days = parseInt(periodFilter, 10);
+      if (!isNaN(days) && days > 0) {
+        const sinceDate = new Date();
+        sinceDate.setDate(sinceDate.getDate() - days);
+        query = query.gte("created_at", sinceDate.toISOString());
+      }
+    }
+
+    // Region Filter
+    if (regiaoFilter && regiaoFilter !== "all") {
+      query = query.eq("ai_regiao", regiaoFilter);
+    }
+
+    // Sorting
+    switch (sort) {
+      case "created_at_asc":
+        query = query.order("created_at", { ascending: true });
+        break;
+      case "ai_data_desc":
+        query = query.order("ai_data", { ascending: false, nullsFirst: false });
+        break;
+      case "ai_placa_asc":
+        query = query.order("ai_placa", { ascending: true });
+        break;
+      case "ai_processo_asc":
+        query = query.order("ai_processo", { ascending: true });
+        break;
+      case "created_at_desc":
+      default:
+        query = query.order("created_at", { ascending: false });
+        break;
+    }
+
+    // Pagination: Server-side LIMIT / OFFSET
+    query = query.range(from, to);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+
+    appState.tickets = data || [];
+    appState.ticketsTotalCount = count || 0;
+    appState.ticketsTotalPages = Math.ceil((count || 0) / limit);
+
+    // Optimized KPI Stats via HEAD query (zero rows transferred over network)
+    if (fetchStats) {
+      loadTicketsStats();
+    }
+
+    renderTicketsTable();
+    updateTicketsPaginationControls();
+  } catch (err) {
+    console.error("Erro ao carregar tickets florestais:", err);
+    els.crudTicketsTbody.innerHTML = `
+      <tr>
+        <td colspan="12" style="text-align: center; padding: 2rem; color: var(--danger);">
+          <i data-lucide="alert-circle" style="width: 24px; height: 24px; margin-bottom: 6px;"></i>
+          <div>Falha ao carregar tickets: ${err.message || "Erro desconhecido"}</div>
+        </td>
+      </tr>
+    `;
+    lucide.createIcons();
+  }
+}
+
+function populateTicketsRegiaoDropdown(regioes) {
+  if (!els.ticketsRegiaoFilter) return;
+  const currentVal = appState.ticketsRegiaoFilter;
+  els.ticketsRegiaoFilter.innerHTML = '<option value="all">Todas as Regiões</option>';
+  regioes.forEach(regiao => {
+    const opt = document.createElement("option");
+    opt.value = regiao;
+    opt.textContent = regiao;
+    if (regiao === currentVal) opt.selected = true;
+    els.ticketsRegiaoFilter.appendChild(opt);
+  });
+}
+
+async function loadTicketsStats() {
+  try {
+    // 1. Total count via HEAD query (0 rows transferred)
+    const { count: total } = await supabaseClient
+      .from("xcvt_comprovantes")
+      .select("*", { count: "exact", head: true });
+
+    // 2. Approved count via HEAD query (0 rows transferred)
+    const { count: approved } = await supabaseClient
+      .from("xcvt_comprovantes")
+      .select("*", { count: "exact", head: true })
+      .eq("aprovado", true);
+
+    // 3. Pending count via HEAD query (0 rows transferred)
+    const { count: pending } = await supabaseClient
+      .from("xcvt_comprovantes")
+      .select("*", { count: "exact", head: true })
+      .or("aprovado.eq.false,aprovado.is.null");
+
+    // 4. Sample recent 300 records to extract unique active regions and recent volume
+    const { data: sampleData } = await supabaseClient
+      .from("xcvt_comprovantes")
+      .select("ai_regiao, ai_pesoliq")
+      .order("created_at", { ascending: false })
+      .limit(300);
+
+    let totalPesoLiq = 0;
+    if (sampleData) {
+      totalPesoLiq = sampleData.reduce((acc, curr) => acc + (parseFloat(curr.ai_pesoliq) || 0), 0);
+      const uniqueRegioes = Array.from(new Set(sampleData.map(d => d.ai_regiao).filter(Boolean))).sort();
+      populateTicketsRegiaoDropdown(uniqueRegioes);
+    }
+
+    appState.ticketsStats = {
+      total: total || 0,
+      approved: approved || 0,
+      pending: pending || 0,
+      totalPesoLiq
+    };
+
+    if (els.statTicketsTotal) els.statTicketsTotal.textContent = (total || 0).toLocaleString("pt-BR");
+    if (els.statTicketsPending) els.statTicketsPending.textContent = (pending || 0).toLocaleString("pt-BR");
+    if (els.statTicketsApproved) els.statTicketsApproved.textContent = (approved || 0).toLocaleString("pt-BR");
+    if (els.statTicketsPesoliq) {
+      els.statTicketsPesoliq.textContent = totalPesoLiq.toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + " t";
+    }
+  } catch (err) {
+    console.error("Erro ao carregar estatísticas escaláveis de tickets:", err);
+  }
+}
+
+function renderTicketsTable() {
+  if (!els.crudTicketsTbody) return;
+  els.crudTicketsTbody.innerHTML = "";
+
+  if (appState.tickets.length === 0) {
+    els.crudTicketsTbody.innerHTML = `
+      <tr>
+        <td colspan="12" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+          <div style="width: 48px; height: 48px; margin: 0 auto 12px; border-radius: 12px; background: var(--bg-hover); display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="inbox" style="width: 24px; height: 24px;"></i>
+          </div>
+          <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-color);">Nenhum ticket encontrado</div>
+          <div style="font-size: 0.8rem; margin-top: 4px;">Tente ajustar os filtros de busca ou aguarde novas leituras de IA.</div>
+        </td>
+      </tr>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  appState.tickets.forEach(ticket => {
+    const row = document.createElement("tr");
+
+    // 1. Status / Avaliação (Toggle interativo)
+    const tdStatus = document.createElement("td");
+    tdStatus.style.textAlign = "center";
+    const isApproved = (ticket.aprovado === true);
+    const badgeApproved = document.createElement("span");
+    badgeApproved.className = `badge-approved ${isApproved ? "approved" : "pending"}`;
+    badgeApproved.title = isApproved ? "Clique para marcar como pendente" : "Clique para aprovar ticket";
+    badgeApproved.innerHTML = `
+      <span class="badge-dot"></span>
+      <span>${isApproved ? "Aprovado" : "Pendente"}</span>
+    `;
+    badgeApproved.addEventListener("click", () => toggleTicketApproval(ticket.id, isApproved, ticket.ai_placa));
+    tdStatus.appendChild(badgeApproved);
+    row.appendChild(tdStatus);
+
+    // 2. Placa
+    const tdPlaca = document.createElement("td");
+    tdPlaca.style.whiteSpace = "nowrap";
+    if (ticket.ai_placa) {
+      tdPlaca.innerHTML = `<span class="plate-badge plate-badge-main">${escapeHtml(ticket.ai_placa)}</span>`;
+    } else {
+      tdPlaca.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">—</span>`;
+    }
+    row.appendChild(tdPlaca);
+
+    // 3. Processo
+    const tdProcesso = document.createElement("td");
+    tdProcesso.style.whiteSpace = "nowrap";
+    tdProcesso.innerHTML = `<span style="font-weight: 600; font-family: monospace; font-size: 0.82rem;">${escapeHtml(ticket.ai_processo || "-")}</span>`;
+    row.appendChild(tdProcesso);
+
+    // 4. Data do Ticket
+    const tdData = document.createElement("td");
+    tdData.style.whiteSpace = "nowrap";
+    if (ticket.ai_data) {
+      const dt = new Date(ticket.ai_data);
+      if (!isNaN(dt.getTime())) {
+        const dateStr = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+        const timeStr = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        tdData.innerHTML = `
+          <div class="access-date-cell">
+            <span>${dateStr}</span>
+            <span class="access-date-time">${timeStr}</span>
+          </div>
+        `;
+      } else {
+        tdData.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">-</span>`;
+      }
+    } else {
+      tdData.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">-</span>`;
+    }
+    row.appendChild(tdData);
+
+    // 5. Região / Talhão
+    const tdRegiao = document.createElement("td");
+    let regiaoHtml = ticket.ai_regiao ? `<span class="badge-tag-regiao">${escapeHtml(ticket.ai_regiao)}</span>` : "";
+    let talhaoHtml = ticket.ai_talhao ? `<span style="display: block; font-size: 0.71rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Talhão: ${escapeHtml(ticket.ai_talhao)}">${escapeHtml(ticket.ai_talhao)}</span>` : "";
+    tdRegiao.innerHTML = regiaoHtml || talhaoHtml ? `${regiaoHtml}${talhaoHtml}` : `<span style="color: var(--text-muted);">-</span>`;
+    row.appendChild(tdRegiao);
+
+    // 6. Destino
+    const tdDestino = document.createElement("td");
+    tdDestino.style.whiteSpace = "nowrap";
+    tdDestino.textContent = ticket.ai_destino || "-";
+    row.appendChild(tdDestino);
+
+    // 7. Peso Líquido (t)
+    const tdPesoLiq = document.createElement("td");
+    tdPesoLiq.style.textAlign = "right";
+    tdPesoLiq.style.whiteSpace = "nowrap";
+    if (ticket.ai_pesoliq !== null && ticket.ai_pesoliq !== undefined) {
+      tdPesoLiq.innerHTML = `<span style="font-weight: 600; color: var(--accent);">${parseFloat(ticket.ai_pesoliq).toFixed(2)} t</span>`;
+    } else {
+      tdPesoLiq.innerHTML = `<span style="color: var(--text-muted);">-</span>`;
+    }
+    row.appendChild(tdPesoLiq);
+
+    // 8. Peso Bruto (t)
+    const tdPesoBruto = document.createElement("td");
+    tdPesoBruto.style.textAlign = "right";
+    tdPesoBruto.style.whiteSpace = "nowrap";
+    if (ticket.ai_pesobruto !== null && ticket.ai_pesobruto !== undefined) {
+      tdPesoBruto.innerHTML = `<span>${parseFloat(ticket.ai_pesobruto).toFixed(2)} t</span>`;
+    } else {
+      tdPesoBruto.innerHTML = `<span style="color: var(--text-muted);">-</span>`;
+    }
+    row.appendChild(tdPesoBruto);
+
+    // 9. NF
+    const tdNf = document.createElement("td");
+    tdNf.style.whiteSpace = "nowrap";
+    tdNf.textContent = ticket.ai_nf || "-";
+    row.appendChild(tdNf);
+
+    // 10. Origem / Fazenda
+    const tdOrigem = document.createElement("td");
+    tdOrigem.className = "ticket-cell-origem";
+    const parts = [];
+    if (ticket.origem) parts.push(escapeHtml(ticket.origem));
+    if (ticket.fazenda) parts.push(`Fazenda: ${escapeHtml(ticket.fazenda)}`);
+    tdOrigem.title = parts.join(" — ");
+    tdOrigem.innerHTML = parts.length > 0 ? parts.join("<br>") : `<span style="color: var(--text-muted);">-</span>`;
+    row.appendChild(tdOrigem);
+
+    // 11. Parecer IA
+    const tdAi = document.createElement("td");
+    tdAi.style.textAlign = "center";
+    if (ticket.ai_message && ticket.ai_message.trim()) {
+      const btnAi = document.createElement("button");
+      btnAi.className = "badge-ai";
+      btnAi.title = "Visualizar parecer da IA";
+      btnAi.innerHTML = `<i data-lucide="sparkles" style="width: 12px; height: 12px;"></i> <span>Parecer</span>`;
+      btnAi.addEventListener("click", () => openTicketAiModal(ticket));
+      tdAi.appendChild(btnAi);
+    } else {
+      tdAi.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">-</span>`;
+    }
+    row.appendChild(tdAi);
+
+    // 12. Ações
+    const tdActions = document.createElement("td");
+    tdActions.style.textAlign = "center";
+
+    const divActions = document.createElement("div");
+    divActions.className = "crud-action-buttons";
+    divActions.style.justifyContent = "center";
+
+    // 1. Conferir Comprovante & Editar (abre modal com visualização lado a lado)
+    const btnReceipt = document.createElement("button");
+    btnReceipt.className = "btn btn-sm btn-secondary";
+    btnReceipt.title = "Conferir comprovante e editar dados";
+    btnReceipt.style.color = "var(--accent)";
+    btnReceipt.innerHTML = `<i data-lucide="image" style="width:13px;height:13px;"></i>`;
+    btnReceipt.addEventListener("click", () => openTicketModal(ticket, true));
+
+    // 2. Excluir ticket
+    const btnDelete = document.createElement("button");
+    btnDelete.className = "btn btn-sm btn-secondary";
+    btnDelete.title = "Excluir ticket";
+    btnDelete.style.color = "var(--danger)";
+    btnDelete.innerHTML = `<i data-lucide="trash-2" style="width:13px;height:13px;"></i>`;
+    btnDelete.addEventListener("click", () => deleteTicket(ticket.id, ticket.ai_placa, ticket.ai_processo));
+
+    divActions.appendChild(btnReceipt);
+    divActions.appendChild(btnDelete);
+    tdActions.appendChild(divActions);
+    row.appendChild(tdActions);
+
+    els.crudTicketsTbody.appendChild(row);
+  });
+
+  lucide.createIcons();
+}
+
+function updateTicketsPaginationControls() {
+  if (!els.ticketsPaginationInfo) return;
+
+  const total = appState.ticketsTotalCount;
+  const page = appState.ticketsPage;
+  const limit = appState.ticketsPageSize;
+  const totalPages = appState.ticketsTotalPages;
+
+  if (total === 0) {
+    els.ticketsPaginationInfo.textContent = "Nenhum ticket encontrado";
+    if (els.btnFirstTicketsPage) els.btnFirstTicketsPage.disabled = true;
+    if (els.btnPrevTicketsPage) els.btnPrevTicketsPage.disabled = true;
+    if (els.btnNextTicketsPage) els.btnNextTicketsPage.disabled = true;
+    if (els.btnLastTicketsPage) els.btnLastTicketsPage.disabled = true;
+    return;
+  }
+
+  const start = page * limit + 1;
+  const end = Math.min((page + 1) * limit, total);
+  els.ticketsPaginationInfo.textContent = `Exibindo ${start}–${end} de ${total} tickets (Página ${page + 1} de ${totalPages})`;
+
+  if (els.btnFirstTicketsPage) els.btnFirstTicketsPage.disabled = (page === 0);
+  if (els.btnPrevTicketsPage) els.btnPrevTicketsPage.disabled = (page === 0);
+  if (els.btnNextTicketsPage) els.btnNextTicketsPage.disabled = (page >= totalPages - 1);
+  if (els.btnLastTicketsPage) els.btnLastTicketsPage.disabled = (page >= totalPages - 1);
+}
+
+async function toggleTicketApproval(id, currentApproved, placa) {
+  const newStatus = !currentApproved;
+  try {
+    const { error } = await supabaseClient
+      .from("xcvt_comprovantes")
+      .update({ aprovado: newStatus })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    Toast.show(
+      newStatus ? "Ticket Aprovado" : "Aprovação Revogada",
+      `Ticket da placa ${placa || "sem placa"} marcado como ${newStatus ? "aprovado" : "pendente"}.`,
+      newStatus ? "success" : "info"
+    );
+
+    loadTicketsData(true);
+  } catch (err) {
+    console.error("Erro ao alterar status de aprovação do ticket:", err);
+    Toast.show("Erro ao atualizar", err.message || "Tente novamente mais tarde.", "error");
+  }
+}
+
+// Image Viewer State for Ticket Florestal Modal
+const ticketViewerState = {
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  rotation: 0,
+  isDragging: false,
+  startX: 0,
+  startY: 0,
+  isSplitView: true,
+  currentTicketId: null,
+  currentSignedUrl: null
+};
+
+function applyTicketImageTransform(withTransition = true) {
+  if (!els.ticketZoomableImg) return;
+  els.ticketZoomableImg.style.transition = withTransition ? "transform 0.15s cubic-bezier(0.2, 0, 0, 1)" : "none";
+  els.ticketZoomableImg.style.transform = `translate(${ticketViewerState.panX}px, ${ticketViewerState.panY}px) scale(${ticketViewerState.zoom}) rotate(${ticketViewerState.rotation}deg)`;
+  if (els.ticketZoomBadge) {
+    els.ticketZoomBadge.textContent = `${Math.round(ticketViewerState.zoom * 100)}%`;
+  }
+}
+
+function setTicketImageZoom(newZoom, withTransition = true) {
+  const clamped = Math.max(0.4, Math.min(6.0, newZoom));
+  ticketViewerState.zoom = Math.round(clamped * 100) / 100;
+  if (ticketViewerState.zoom <= 1) {
+    // Center if back to 1x or below
+    ticketViewerState.panX = 0;
+    ticketViewerState.panY = 0;
+  }
+  applyTicketImageTransform(withTransition);
+}
+
+function resetTicketImageTransform() {
+  ticketViewerState.zoom = 1;
+  ticketViewerState.panX = 0;
+  ticketViewerState.panY = 0;
+  ticketViewerState.rotation = 0;
+  applyTicketImageTransform(true);
+}
+
+function rotateTicketImage() {
+  ticketViewerState.rotation = (ticketViewerState.rotation + 90) % 360;
+  applyTicketImageTransform(true);
+}
+
+function toggleTicketModalSplitView(forceState = null) {
+  if (forceState !== null) {
+    ticketViewerState.isSplitView = forceState;
+  } else {
+    ticketViewerState.isSplitView = !ticketViewerState.isSplitView;
+  }
+
+  if (els.ticketModalCard) {
+    if (ticketViewerState.isSplitView) {
+      els.ticketModalCard.classList.add("split-view");
+    } else {
+      els.ticketModalCard.classList.remove("split-view");
+    }
+  }
+
+  if (els.btnToggleTicketImgText) {
+    els.btnToggleTicketImgText.textContent = ticketViewerState.isSplitView ? "Ocultar Comprovante" : "Ver Comprovante";
+  }
+
+  if (els.btnToggleTicketImg) {
+    els.btnToggleTicketImg.innerHTML = ticketViewerState.isSplitView
+      ? `<i data-lucide="image-off" style="width: 14px; height: 14px;"></i> <span id="btn-toggle-ticket-img-text">Ocultar Comprovante</span>`
+      : `<i data-lucide="image" style="width: 14px; height: 14px;"></i> <span id="btn-toggle-ticket-img-text">Ver Comprovante</span>`;
+    lucide.createIcons();
+  }
+
+  // If opening split view and we have an active ticket whose image isn't loaded yet
+  if (ticketViewerState.isSplitView && appState.activeViewingTicket) {
+    if (ticketViewerState.currentTicketId !== appState.activeViewingTicket.id) {
+      loadTicketImage(appState.activeViewingTicket.id);
+    }
+  }
+}
+
+async function loadTicketImage(ticketId) {
+  if (!ticketId) return;
+  ticketViewerState.currentTicketId = ticketId;
+  resetTicketImageTransform();
+
+  if (els.ticketImgLoading) els.ticketImgLoading.classList.remove("hidden");
+  if (els.ticketImgError) els.ticketImgError.classList.add("hidden");
+  if (els.ticketZoomableImg) {
+    els.ticketZoomableImg.style.opacity = "0";
+    els.ticketZoomableImg.src = "";
+  }
+  if (els.btnTicketOpenTab) {
+    els.btnTicketOpenTab.removeAttribute("href");
+  }
+
+  try {
+    const { data, error } = await supabaseClient.storage
+      .from("xctv_comprovantes")
+      .createSignedUrl(`${ticketId}/comprovante.jpeg`, 3600);
+
+    if (error || !data || !data.signedUrl) {
+      throw error || new Error("Comprovante não disponível no storage.");
+    }
+
+    let imgUrl = data.signedUrl;
+    if (!imgUrl.startsWith("http")) {
+      imgUrl = `${SUPABASE_URL}/storage/v1${imgUrl.startsWith("/") ? "" : "/"}${imgUrl}`;
+    }
+    ticketViewerState.currentSignedUrl = imgUrl;
+
+    if (els.ticketZoomableImg) {
+      els.ticketZoomableImg.onload = () => {
+        if (ticketViewerState.currentTicketId !== ticketId) return; // Prevent race conditions
+        if (els.ticketImgLoading) els.ticketImgLoading.classList.add("hidden");
+        if (els.ticketImgError) els.ticketImgError.classList.add("hidden");
+        els.ticketZoomableImg.style.opacity = "1";
+        if (els.btnTicketOpenTab) {
+          els.btnTicketOpenTab.href = imgUrl;
+        }
+        resetTicketImageTransform();
+      };
+
+      els.ticketZoomableImg.onerror = () => {
+        if (ticketViewerState.currentTicketId !== ticketId) return;
+        if (els.ticketImgLoading) els.ticketImgLoading.classList.add("hidden");
+        if (els.ticketImgError) els.ticketImgError.classList.remove("hidden");
+        els.ticketZoomableImg.style.opacity = "0";
+      };
+
+      els.ticketZoomableImg.src = imgUrl;
+    }
+  } catch (err) {
+    console.warn("Não foi possível carregar o comprovante:", err);
+    if (ticketViewerState.currentTicketId !== ticketId) return;
+    if (els.ticketImgLoading) els.ticketImgLoading.classList.add("hidden");
+    if (els.ticketImgError) els.ticketImgError.classList.remove("hidden");
+    if (els.ticketZoomableImg) els.ticketZoomableImg.style.opacity = "0";
+  }
+}
+
+function openTicketModal(ticket, preferImage = true) {
+  if (!ticket) return;
+  appState.activeViewingTicket = ticket;
+
+  els.ticketForm.reset();
+  els.ticketEditId.value = ticket.id || "";
+  els.ticketModalTitle.textContent = `Avaliar & Editar Ticket — Placa ${ticket.ai_placa || "Sem Placa"}`;
+  els.ticketModalSubtitle.textContent = `Processo: ${ticket.ai_processo || "-"} | ID: ${ticket.id}`;
+
+  // AI Insights display
+  if (ticket.ai_message && ticket.ai_message.trim()) {
+    els.ticketAiBox.classList.remove("hidden");
+    els.ticketAiText.textContent = ticket.ai_message.trim();
+  } else {
+    els.ticketAiBox.classList.add("hidden");
+    els.ticketAiText.textContent = "";
+  }
+
+  // Populate form fields
+  els.ticketEditPlaca.value = ticket.ai_placa || "";
+  els.ticketEditProcesso.value = ticket.ai_processo || "";
+
+  // Datetime-local format: YYYY-MM-DDTHH:mm
+  if (ticket.ai_data) {
+    try {
+      const d = new Date(ticket.ai_data);
+      if (!isNaN(d.getTime())) {
+        const tzOffset = d.getTimezoneOffset() * 60000;
+        const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
+        els.ticketEditData.value = localISOTime;
+      } else {
+        els.ticketEditData.value = "";
+      }
+    } catch {
+      els.ticketEditData.value = "";
+    }
+  } else {
+    els.ticketEditData.value = "";
+  }
+
+  els.ticketEditRegiao.value = ticket.ai_regiao || "";
+  els.ticketEditTalhao.value = ticket.ai_talhao || "";
+  els.ticketEditDestino.value = ticket.ai_destino || "";
+  els.ticketEditPesoliq.value = ticket.ai_pesoliq !== null && ticket.ai_pesoliq !== undefined ? ticket.ai_pesoliq : "";
+  els.ticketEditPesobruto.value = ticket.ai_pesobruto !== null && ticket.ai_pesobruto !== undefined ? ticket.ai_pesobruto : "";
+  els.ticketEditNf.value = ticket.ai_nf || "";
+  els.ticketEditOrigem.value = ticket.origem || "";
+  els.ticketEditFazenda.value = ticket.fazenda || "";
+  els.ticketEditAprovado.checked = (ticket.aprovado === true);
+
+  // Split view configuration & load image
+  if (preferImage) {
+    toggleTicketModalSplitView(true);
+    loadTicketImage(ticket.id);
+  } else {
+    toggleTicketModalSplitView(false);
+  }
+
+  els.ticketModalBackdrop.classList.add("show");
+  lucide.createIcons();
+}
+
+function closeTicketModal() {
+  els.ticketModalBackdrop.classList.remove("show");
+  els.ticketForm.reset();
+  els.ticketEditId.value = "";
+  ticketViewerState.currentTicketId = null;
+  if (els.ticketZoomableImg) {
+    els.ticketZoomableImg.src = "";
+    els.ticketZoomableImg.style.opacity = "0";
+  }
+  resetTicketImageTransform();
+}
+
+async function handleTicketFormSubmit(e, autoApprove = false) {
+  if (e) e.preventDefault();
+
+  const id = els.ticketEditId.value;
+  if (!id) {
+    Toast.show("Erro", "ID do ticket inválido.", "error");
+    return;
+  }
+
+  const placa = els.ticketEditPlaca.value.trim().toUpperCase();
+  const processo = els.ticketEditProcesso.value.trim();
+  const rawData = els.ticketEditData.value;
+  let aiDataIso = null;
+  if (rawData) {
+    const d = new Date(rawData);
+    if (!isNaN(d.getTime())) {
+      aiDataIso = d.toISOString();
+    }
+  }
+
+  const regiao = els.ticketEditRegiao.value.trim() || null;
+  const talhao = els.ticketEditTalhao.value.trim() || null;
+  const destino = els.ticketEditDestino.value.trim() || null;
+  const pesoliq = els.ticketEditPesoliq.value !== "" ? parseFloat(els.ticketEditPesoliq.value) : null;
+  const pesobruto = els.ticketEditPesobruto.value !== "" ? parseFloat(els.ticketEditPesobruto.value) : null;
+  const nf = els.ticketEditNf.value.trim() || "";
+  const origem = els.ticketEditOrigem.value.trim() || null;
+  const fazenda = els.ticketEditFazenda.value.trim() || null;
+  const aprovado = autoApprove ? true : els.ticketEditAprovado.checked;
+
+  const updatePayload = {
+    ai_placa: placa,
+    ai_processo: processo,
+    ai_data: aiDataIso,
+    ai_regiao: regiao,
+    ai_talhao: talhao,
+    ai_destino: destino,
+    ai_pesoliq: pesoliq,
+    ai_pesobruto: pesobruto,
+    ai_nf: nf,
+    origem: origem,
+    fazenda: fazenda,
+    aprovado: aprovado
+  };
+
+  try {
+    if (els.btnSaveTicket) els.btnSaveTicket.disabled = true;
+    if (els.btnSaveApproveTicket) els.btnSaveApproveTicket.disabled = true;
+
+    const { error } = await supabaseClient
+      .from("xcvt_comprovantes")
+      .update(updatePayload)
+      .eq("id", id);
+
+    if (error) throw error;
+
+    Toast.show(
+      aprovado ? "Ticket Aprovado com Sucesso" : "Dados Salvos com Sucesso",
+      `Os dados do ticket (${placa}) foram devidamente atualizados no banco de dados.`,
+      "success"
+    );
+
+    closeTicketModal();
+    loadTicketsData(true);
+  } catch (err) {
+    console.error("Erro ao salvar ticket florestal:", err);
+    Toast.show("Erro ao salvar", err.message || "Não foi possível atualizar o ticket.", "error");
+  } finally {
+    if (els.btnSaveTicket) els.btnSaveTicket.disabled = false;
+    if (els.btnSaveApproveTicket) els.btnSaveApproveTicket.disabled = false;
+  }
+}
+
+function openTicketAiModal(ticket) {
+  if (!ticket) return;
+  appState.activeViewingTicket = ticket;
+  els.ticketAiModalSubtitle.textContent = `Placa: ${ticket.ai_placa || "-"} | Processo: ${ticket.ai_processo || "-"}`;
+  els.ticketAiModalContent.textContent = ticket.ai_message && ticket.ai_message.trim()
+    ? ticket.ai_message.trim()
+    : "Nenhuma observação ou parecer registrado pela IA para este comprovante.";
+  els.ticketAiModalBackdrop.classList.add("show");
+  lucide.createIcons();
+}
+
+function closeTicketAiModal() {
+  els.ticketAiModalBackdrop.classList.remove("show");
+}
+
+async function deleteTicket(id, placa, processo) {
+  const confirmed = confirm(`Tem certeza que deseja excluir o registro do ticket ${processo || ""} (Placa: ${placa || ""})?\n\nEsta ação não poderá ser desfeita.`);
+  if (!confirmed) return;
+
+  try {
+    const { error } = await supabaseClient
+      .from("xcvt_comprovantes")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+
+    Toast.show("Registro Excluído", "O ticket foi removido do sistema.", "success");
+    loadTicketsData(true);
+  } catch (err) {
+    console.error("Erro ao excluir ticket:", err);
+    Toast.show("Erro ao excluir", err.message || "Não foi possível excluir o registro.", "error");
   }
 }
 

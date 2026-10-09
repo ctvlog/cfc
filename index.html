@@ -7,7 +7,7 @@
   <title>Central de Fretes Cootravale</title>
 
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.1.1">
+  <link rel="stylesheet" href="style.css?v=1.1.8">
 
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -81,37 +81,78 @@
       <div class="sidebar-content">
         <!-- Navigation Menu -->
         <div id="sidebar-admin-nav" class="hidden">
-          <div class="sidebar-section-title">Navegação</div>
-          <div class="nav-group" style="margin-bottom: 1.5rem;">
-            <button class="nav-item active" id="nav-btn-queues">
-              <i data-lucide="layout-grid"></i>
-              <span>Filas de Carregamento</span>
-            </button>
-            <a href="fila-mobile.html" class="nav-item" style="text-decoration: none;"
-              title="Abrir painel otimizado para celular e smarthome">
-              <i data-lucide="smartphone"></i>
-              <span>Fila Mobile</span>
-            </a>
-            <button class="nav-item" id="nav-btn-movements">
-              <i data-lucide="history"></i>
-              <span>Movimentações</span>
-            </button>
-            <button class="nav-item" id="nav-btn-vehicles">
-              <i data-lucide="truck"></i>
-              <span>Gestão de Veículos</span>
-            </button>
-            <button class="nav-item" id="nav-btn-cooperados">
-              <i data-lucide="users"></i>
-              <span>Gestão de Cooperados</span>
-            </button>
-            <button class="nav-item" id="nav-btn-access">
-              <i data-lucide="shield-check"></i>
-              <span>Controle de Acessos</span>
-            </button>
-            <button class="nav-item" id="nav-btn-profiles">
-              <i data-lucide="user-cog"></i>
-              <span>Perfis de Usuários</span>
-            </button>
+          <div class="nav-groups-container">
+            <!-- Sub-menu: Fila de Carregamento -->
+            <div class="menu-category" id="menu-category-fila">
+              <button type="button" class="menu-category-header" data-toggle="sub-menu" title="Recolher / Expandir Fila de Carregamento">
+                <div class="menu-category-title">
+                  <i data-lucide="layers"></i>
+                  <span>Fila de Carregamento</span>
+                </div>
+                <i data-lucide="chevron-down" class="menu-chevron"></i>
+              </button>
+              <div class="nav-sub-group">
+                <button class="nav-item active" id="nav-btn-queues" data-view="queues">
+                  <i data-lucide="layout-grid"></i>
+                  <span>Grid</span>
+                </button>
+                <a href="fila-mobile.html" class="nav-item" id="nav-btn-mobile" style="text-decoration: none;"
+                  title="Abrir painel otimizado para celular e smarthome">
+                  <i data-lucide="smartphone"></i>
+                  <span>Fila Mobile</span>
+                </a>
+                <button class="nav-item" id="nav-btn-movements" data-view="movements">
+                  <i data-lucide="history"></i>
+                  <span>Movimentações</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Sub-menu: Comprovantes -->
+            <div class="menu-category hidden" id="menu-category-comprovantes">
+              <button type="button" class="menu-category-header" data-toggle="sub-menu" title="Recolher / Expandir Comprovantes">
+                <div class="menu-category-title">
+                  <i data-lucide="receipt"></i>
+                  <span>Comprovantes</span>
+                </div>
+                <i data-lucide="chevron-down" class="menu-chevron"></i>
+              </button>
+              <div class="nav-sub-group">
+                <button class="nav-item" id="nav-btn-ticket-florestal" data-view="ticket-florestal">
+                  <i data-lucide="tree-pine"></i>
+                  <span>Ticket Florestal</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Sub-menu: Administrativo -->
+            <div class="menu-category" id="menu-category-admin">
+              <button type="button" class="menu-category-header" data-toggle="sub-menu" title="Recolher / Expandir Administrativo">
+                <div class="menu-category-title">
+                  <i data-lucide="shield"></i>
+                  <span>Administrativo</span>
+                </div>
+                <i data-lucide="chevron-down" class="menu-chevron"></i>
+              </button>
+              <div class="nav-sub-group">
+                <button class="nav-item" id="nav-btn-vehicles-admin" data-view="vehicles">
+                  <i data-lucide="truck"></i>
+                  <span>Gestão de Veículos</span>
+                </button>
+                <button class="nav-item" id="nav-btn-cooperados" data-view="cooperados">
+                  <i data-lucide="users"></i>
+                  <span>Gestão de Cooperados</span>
+                </button>
+                <button class="nav-item" id="nav-btn-access" data-view="access">
+                  <i data-lucide="shield-check"></i>
+                  <span>Controle de Acessos</span>
+                </button>
+                <button class="nav-item" id="nav-btn-profiles" data-view="profiles">
+                  <i data-lucide="user-cog"></i>
+                  <span>Perfil de Usuários</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -856,6 +897,167 @@
         </div>
       </section>
 
+      <!-- Ticket Florestal Viewport (xcvt_comprovantes) -->
+      <section class="crud-container hidden" id="ticket-florestal-section">
+        <div class="crud-header">
+          <div class="crud-title-area">
+            <h2 class="crud-title">Ticket Florestal &mdash; Comprovantes IA</h2>
+            <span class="crud-subtitle">Auditoria, validação e aprovação dos dados extraídos pela IA (<code style="font-size: 0.78rem;">xcvt_comprovantes</code>)</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-sm btn-secondary" id="btn-refresh-tickets"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
+              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+              <span>Recarregar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Summary Metrics Bar for Tickets -->
+        <div class="access-metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue"><i data-lucide="receipt"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-tickets-total">0</span>
+              <span class="metric-label">Total de Tickets</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon orange"><i data-lucide="clock"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-tickets-pending">0</span>
+              <span class="metric-label">Pendentes de Avaliação</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon green"><i data-lucide="shield-check"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-tickets-approved">0</span>
+              <span class="metric-label">Aprovados</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon teal"><i data-lucide="scale"></i></div>
+            <div class="metric-content">
+              <span class="metric-num" id="stat-tickets-pesoliq">0.00 t</span>
+              <span class="metric-label">Volume Líquido Total</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters & Toolbar for Tickets -->
+        <div class="crud-toolbar access-toolbar">
+          <div class="crud-search-wrapper">
+            <i data-lucide="search" class="filter-icon"></i>
+            <input type="text" id="tickets-search-input" class="filter-input" placeholder="Buscar placa, processo, talhão, NF...">
+          </div>
+
+          <div class="access-filters-group">
+            <div class="filter-item">
+              <label class="filter-label-inline" for="tickets-status-filter">Status:</label>
+              <select id="tickets-status-filter" class="filter-select">
+                <option value="all">Todos os Status</option>
+                <option value="pending" selected>Pendentes de Avaliação</option>
+                <option value="approved">Aprovados</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="tickets-period-filter">Período:</label>
+              <select id="tickets-period-filter" class="filter-select">
+                <option value="all">Todo o Histórico</option>
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="60">Últimos 60 dias</option>
+                <option value="90">Últimos 90 dias</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="tickets-regiao-filter">Região:</label>
+              <select id="tickets-regiao-filter" class="filter-select">
+                <option value="all">Todas as Regiões</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="tickets-sort-select">Ordenar:</label>
+              <select id="tickets-sort-select" class="filter-select">
+                <option value="created_at_desc" selected>Mais Recentes (IA)</option>
+                <option value="created_at_asc">Mais Antigos</option>
+                <option value="ai_data_desc">Data do Ticket (Recente)</option>
+                <option value="ai_placa_asc">Placa (A - Z)</option>
+                <option value="ai_processo_asc">Processo (0 - 9)</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label class="filter-label-inline" for="tickets-pagesize-select">Exibir:</label>
+              <select id="tickets-pagesize-select" class="filter-select">
+                <option value="20">20 / pág</option>
+                <option value="30" selected>30 / pág</option>
+                <option value="50">50 / pág</option>
+                <option value="100">100 / pág</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-sm btn-secondary" id="btn-reset-tickets-filters"
+              title="Limpar Filtros" style="display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="rotate-ccw" style="width: 13px; height: 13px;"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tickets Table Wrapper -->
+        <div class="crud-table-wrapper">
+          <table class="crud-table">
+            <thead>
+              <tr>
+                <th style="width: 7%; text-align: center;">Status</th>
+                <th style="width: 9.5%;">Placa</th>
+                <th style="width: 8%;">Processo</th>
+                <th style="width: 8%;">Data</th>
+                <th style="width: 10.5%;">Região / Talhão</th>
+                <th style="width: 6.5%;">Destino</th>
+                <th style="width: 7.5%; text-align: right;">Peso Líq.</th>
+                <th style="width: 7.5%; text-align: right;">Peso Bruto</th>
+                <th style="width: 6.5%;">NF</th>
+                <th style="width: 13%;">Origem / Fazenda</th>
+                <th style="width: 8%; text-align: center;">Parecer IA</th>
+                <th style="width: 8%; text-align: center;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="crud-tickets-tbody">
+              <!-- Rendered dynamically by app.js -->
+            </tbody>
+          </table>
+
+          <!-- Pagination controls for Tickets -->
+          <div class="pagination-controls access-pagination">
+            <span class="pagination-info" id="tickets-pagination-info">Carregando tickets...</span>
+            <div class="pagination-buttons">
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-first-tickets-page"
+                title="Primeira Página" disabled>
+                <i data-lucide="chevrons-left"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-prev-tickets-page" title="Página Anterior"
+                disabled>
+                <i data-lucide="chevron-left"></i> Anterior
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-next-tickets-page" title="Próxima Página"
+                disabled>
+                Próximo <i data-lucide="chevron-right"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-secondary" id="btn-last-tickets-page" title="Última Página"
+                disabled>
+                <i data-lucide="chevrons-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </section>
 
@@ -1269,8 +1471,265 @@
     </div>
   </div>
 
+  <!-- TICKET FLORESTAL EDIT & APPROVE MODAL -->
+  <div class="modal-backdrop" id="ticket-modal-backdrop">
+    <div class="modal-card ticket-modal-card split-view" id="ticket-modal-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="logo-icon" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); color: var(--accent);">
+            <i data-lucide="tree-pine" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title" id="ticket-modal-title">Avaliar & Editar Ticket Florestal</h3>
+            <span class="crud-subtitle" id="ticket-modal-subtitle">Conferência dos dados extraídos pela IA</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <!-- Toggle Image View button -->
+          <button class="btn btn-secondary btn-sm" id="btn-toggle-ticket-img" type="button" title="Alternar painel com comprovante original">
+            <i data-lucide="image" style="width: 14px; height: 14px;"></i>
+            <span id="btn-toggle-ticket-img-text">Ocultar Comprovante</span>
+          </button>
+          <button class="modal-close" id="ticket-modal-close" type="button">
+            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="ticket-modal-body" id="ticket-modal-body">
+        <!-- LEFT COLUMN: ZOOMABLE RECEIPT IMAGE VIEWER -->
+        <div class="ticket-image-panel" id="ticket-image-panel">
+          <!-- Toolbar -->
+          <div class="ticket-image-toolbar">
+            <div class="ticket-image-toolbar-title">
+              <i data-lucide="receipt" style="width: 14px; height: 14px; color: var(--accent);"></i>
+              <span>Comprovante Analisado</span>
+              <span class="badge-tag-regiao" style="font-size: 0.68rem; padding: 1px 6px;">JPG</span>
+            </div>
+
+            <div class="ticket-image-toolbar-actions">
+              <!-- Zoom Out -->
+              <button type="button" class="btn-img-ctrl" id="btn-ticket-zoom-out" title="Reduzir Zoom (Scroll para baixo ou '-')">
+                <i data-lucide="zoom-out" style="width: 14px; height: 14px;"></i>
+              </button>
+
+              <!-- Zoom Badge -->
+              <span class="ticket-zoom-badge" id="ticket-zoom-badge" title="Nível de ampliação atual">100%</span>
+
+              <!-- Zoom In -->
+              <button type="button" class="btn-img-ctrl" id="btn-ticket-zoom-in" title="Aumentar Zoom (Scroll para cima ou '+')">
+                <i data-lucide="zoom-in" style="width: 14px; height: 14px;"></i>
+              </button>
+
+              <span class="toolbar-divider"></span>
+
+              <!-- Reset Zoom -->
+              <button type="button" class="btn-img-ctrl" id="btn-ticket-zoom-reset" title="Restaurar Zoom Padrão (100%)">
+                <i data-lucide="maximize" style="width: 14px; height: 14px;"></i>
+              </button>
+
+              <!-- Rotate 90 deg -->
+              <button type="button" class="btn-img-ctrl" id="btn-ticket-rotate" title="Girar Comprovante 90°">
+                <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+              </button>
+
+              <span class="toolbar-divider"></span>
+
+              <!-- Open original in new tab -->
+              <a href="#" target="_blank" class="btn-img-ctrl" id="btn-ticket-open-tab" title="Abrir imagem original em nova aba" rel="noopener noreferrer">
+                <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Isolated Image Viewport (Overflow Hidden ensures popup layout never changes) -->
+          <div class="ticket-image-viewport" id="ticket-image-viewport" title="Scroll do mouse para zoom | Arraste para navegar | Duplo clique alterna 2x">
+            <!-- Loading Indicator -->
+            <div class="ticket-image-status" id="ticket-img-loading">
+              <div class="spinner-small" style="width: 28px; height: 28px; border-width: 3px;"></div>
+              <span>Carregando comprovante do storage...</span>
+            </div>
+
+            <!-- Error / Empty State -->
+            <div class="ticket-image-status hidden" id="ticket-img-error">
+              <i data-lucide="image-off" style="width: 38px; height: 38px; color: var(--text-muted);"></i>
+              <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-color);">Comprovante não encontrado</span>
+              <span style="font-size: 0.76rem; color: var(--text-muted); text-align: center; max-width: 260px;">
+                Não foi localizado o arquivo <code>comprovante.jpeg</code> no bucket para este ticket.
+              </span>
+            </div>
+
+            <!-- Zoomable Image -->
+            <img id="ticket-zoomable-img" class="ticket-zoomable-img" src="" alt="Comprovante do Ticket Florestal" draggable="false">
+          </div>
+
+          <!-- Footer Hints -->
+          <div class="ticket-image-footer-hints">
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              <i data-lucide="mouse-pointer" style="width: 11px; height: 11px;"></i> Arraste para mover
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              <i data-lucide="zoom-in" style="width: 11px; height: 11px;"></i> Scroll para zoom
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              <i data-lucide="rotate-cw" style="width: 11px; height: 11px;"></i> Duplo clique alterna 2x
+            </span>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: EDIT FORM -->
+        <div class="ticket-form-panel" id="ticket-form-panel">
+          <!-- AI Observation Box -->
+          <div class="ai-insight-box hidden" id="ticket-ai-box">
+            <div class="ai-insight-header">
+              <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+              <span>Parecer e Raciocínio da IA</span>
+            </div>
+            <div class="ai-insight-text" id="ticket-ai-text"></div>
+          </div>
+
+          <form id="ticket-form">
+            <input type="hidden" id="ticket-edit-id">
+
+            <div class="ticket-form-grid">
+              <!-- Col 1: Placa -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-placa">Placa do Veículo *</label>
+                <input class="form-input form-input-compact" style="font-weight: 700; text-transform: uppercase;"
+                  type="text" id="ticket-edit-placa" required>
+              </div>
+
+              <!-- Col 2: Processo -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-processo">Nº do Processo / Ticket *</label>
+                <input class="form-input form-input-compact" style="font-weight: 600; font-family: monospace;"
+                  type="text" id="ticket-edit-processo" required>
+              </div>
+
+              <!-- Col 1: Data/Hora -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-data">Data/Hora no Ticket</label>
+                <input class="form-input form-input-compact" type="datetime-local" id="ticket-edit-data">
+              </div>
+
+              <!-- Col 2: NF -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-nf">Nota Fiscal (NF)</label>
+                <input class="form-input form-input-compact" type="text" id="ticket-edit-nf">
+              </div>
+
+              <!-- Col 1: Peso Líquido -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-pesoliq">Peso Líquido (t)</label>
+                <input class="form-input form-input-compact" type="number" step="0.01" id="ticket-edit-pesoliq" style="color: var(--accent); font-weight: 600;">
+              </div>
+
+              <!-- Col 2: Peso Bruto -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-pesobruto">Peso Bruto (t)</label>
+                <input class="form-input form-input-compact" type="number" step="0.01" id="ticket-edit-pesobruto">
+              </div>
+
+              <!-- Col 1: Região Florestal -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-regiao">Região Florestal</label>
+                <input class="form-input form-input-compact" type="text" id="ticket-edit-regiao">
+              </div>
+
+              <!-- Col 2: Talhão -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-talhao">Talhão</label>
+                <input class="form-input form-input-compact" type="text" id="ticket-edit-talhao">
+              </div>
+
+              <!-- Col 1: Destino -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-destino">Destino</label>
+                <input class="form-input form-input-compact" type="text" id="ticket-edit-destino">
+              </div>
+
+              <!-- Col 2: Origem -->
+              <div class="form-group">
+                <label class="form-label" for="ticket-edit-origem">Origem</label>
+                <input class="form-input form-input-compact" type="text" id="ticket-edit-origem">
+              </div>
+
+              <!-- Span 2: Fazenda -->
+              <div class="form-group grid-col-span-2">
+                <label class="form-label" for="ticket-edit-fazenda">Fazenda</label>
+                <input class="form-input form-input-compact" type="text" id="ticket-edit-fazenda">
+              </div>
+            </div>
+
+            <!-- Status toggle -->
+            <div class="ticket-status-box-compact">
+              <div>
+                <div style="font-weight: 600; font-size: 0.82rem; color: var(--text-color);">Status de Avaliação</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">Marque como aprovado se os dados estiverem conferidos.</div>
+              </div>
+              <label style="display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none;">
+                <input type="checkbox" id="ticket-edit-aprovado" style="width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent);">
+                <span style="font-weight: 600; font-size: 0.82rem; color: var(--accent);">Aprovado</span>
+              </label>
+            </div>
+
+            <div class="ticket-actions-compact">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-ticket" style="width: auto;">Cancelar</button>
+              <button type="submit" class="btn btn-secondary btn-sm" id="btn-save-ticket"
+                style="width: auto; display: flex; align-items: center; gap: 5px;">
+                <i data-lucide="save" style="width: 13px; height: 13px;"></i>
+                <span>Salvar</span>
+              </button>
+              <button type="button" class="btn btn-sm" id="btn-save-approve-ticket"
+                style="width: auto; display: flex; align-items: center; gap: 5px;">
+                <i data-lucide="check-circle" style="width: 13px; height: 13px;"></i>
+                <span>Salvar & Aprovar</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKET AI MESSAGE QUICK VIEW MODAL -->
+  <div class="modal-backdrop" id="ticket-ai-modal-backdrop">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="logo-icon" style="width: 36px; height: 36px; border-radius: 8px; background: rgba(139, 92, 246, 0.15); color: #a78bfa;">
+            <i data-lucide="bot" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title">Parecer da Inteligência Artificial</h3>
+            <span class="crud-subtitle" id="ticket-ai-modal-subtitle">Log de leitura e extração</span>
+          </div>
+        </div>
+        <button class="modal-close" id="ticket-ai-modal-close" type="button">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="ai-insight-box" style="margin-bottom: 1rem;">
+          <div class="ai-insight-header">
+            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+            <span>Observações Registradas na Extração</span>
+          </div>
+          <div class="ai-insight-text" id="ticket-ai-modal-content" style="white-space: pre-wrap;"></div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-close-ticket-ai-modal" style="width: auto;">Fechar</button>
+          <button type="button" class="btn btn-sm" id="btn-edit-from-ai-modal" style="width: auto; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+            <span>Abrir Edição</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main JavaScript File -->
-  <script src="app.js?v=1.1.9"></script>
+  <script src="app.js?v=1.2.9"></script>
 </body>
 
 </html>
