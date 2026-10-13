@@ -2988,6 +2988,39 @@ body {
   border-radius: 6px;
 }
 
+.datetime-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.datetime-input-wrapper .form-input {
+  padding-right: 30px !important;
+}
+
+.btn-datetime-picker {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.btn-datetime-picker:hover {
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+
 .ticket-form-panel .ai-insight-box {
   padding: 6px 10px;
   margin-bottom: 8px;
@@ -3032,7 +3065,7 @@ body {
 /* 1. Main View: Compact Table for 14" Notebooks */
 #ticket-florestal-section .crud-table {
   width: 100%;
-  min-width: 920px;
+  min-width: 1060px;
   table-layout: fixed;
 }
 

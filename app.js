@@ -351,11 +351,15 @@ const els = {
   ticketEditPlaca: document.getElementById("ticket-edit-placa"),
   ticketEditProcesso: document.getElementById("ticket-edit-processo"),
   ticketEditData: document.getElementById("ticket-edit-data"),
+  btnOpenDatePicker: document.getElementById("btn-open-date-picker"),
+  ticketEditDataNative: document.getElementById("ticket-edit-data-native"),
   ticketEditRegiao: document.getElementById("ticket-edit-regiao"),
   ticketEditTalhao: document.getElementById("ticket-edit-talhao"),
   ticketEditDestino: document.getElementById("ticket-edit-destino"),
   ticketEditPesoliq: document.getElementById("ticket-edit-pesoliq"),
   ticketEditPesobruto: document.getElementById("ticket-edit-pesobruto"),
+  ticketEditDistancia: document.getElementById("ticket-edit-distancia"),
+  ticketEditPercAsfalto: document.getElementById("ticket-edit-perc-asfalto"),
   ticketEditNf: document.getElementById("ticket-edit-nf"),
   ticketEditOrigem: document.getElementById("ticket-edit-origem"),
   ticketEditFazenda: document.getElementById("ticket-edit-fazenda"),
@@ -974,6 +978,48 @@ function setupEventListeners() {
   }
   if (els.btnSaveApproveTicket) {
     els.btnSaveApproveTicket.addEventListener("click", (e) => handleTicketFormSubmit(e, true));
+  }
+
+  // Ticket Date Picker & DD/MM/AAAA Input Mask
+  if (els.btnOpenDatePicker && els.ticketEditDataNative) {
+    els.btnOpenDatePicker.addEventListener("click", () => {
+      try {
+        if (typeof els.ticketEditDataNative.showPicker === "function") {
+          els.ticketEditDataNative.showPicker();
+        } else {
+          els.ticketEditDataNative.focus();
+        }
+      } catch (err) {
+        console.warn("showPicker error:", err);
+      }
+    });
+
+    els.ticketEditDataNative.addEventListener("change", () => {
+      const val = els.ticketEditDataNative.value;
+      if (val) {
+        const [datePart, timePart] = val.split("T");
+        if (datePart) {
+          const [y, m, d] = datePart.split("-");
+          const timeStr = timePart ? timePart.slice(0, 5) : "00:00";
+          els.ticketEditData.value = `${d}/${m}/${y} ${timeStr}`;
+        }
+      }
+    });
+  }
+
+  if (els.ticketEditData) {
+    els.ticketEditData.addEventListener("input", (e) => {
+      if (e.inputType && e.inputType.startsWith("delete")) return;
+      let v = els.ticketEditData.value.replace(/\D/g, "");
+      if (v.length > 12) v = v.slice(0, 12);
+      let formatted = "";
+      if (v.length > 0) formatted += v.slice(0, 2);
+      if (v.length > 2) formatted += "/" + v.slice(2, 4);
+      if (v.length > 4) formatted += "/" + v.slice(4, 8);
+      if (v.length > 8) formatted += " " + v.slice(8, 10);
+      if (v.length > 10) formatted += ":" + v.slice(10, 12);
+      els.ticketEditData.value = formatted;
+    });
   }
 
   // Ticket AI Modal Controls
@@ -4523,12 +4569,54 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+function formatPtBrDateTime(dateVal) {
+  if (!dateVal) return "";
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch {
+    return "";
+  }
+}
+
+function parsePtBrDateTime(str) {
+  if (!str || !str.trim()) return null;
+  const s = str.trim();
+  const match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1;
+    const year = parseInt(match[3], 10);
+    const hours = match[4] ? parseInt(match[4], 10) : 0;
+    const minutes = match[5] ? parseInt(match[5], 10) : 0;
+    const seconds = match[6] ? parseInt(match[6], 10) : 0;
+
+    if (day < 1 || day > 31 || month < 0 || month > 11 || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      return null;
+    }
+
+    const d = new Date(year, month, day, hours, minutes, seconds);
+    if (!isNaN(d.getTime()) && d.getDate() === day && d.getMonth() === month && d.getFullYear() === year) {
+      return d.toISOString();
+    }
+    return null;
+  }
+  const fallback = new Date(s);
+  return !isNaN(fallback.getTime()) ? fallback.toISOString() : null;
+}
+
 async function loadTicketsData(fetchStats = false) {
   if (!els.crudTicketsTbody) return;
 
   els.crudTicketsTbody.innerHTML = `
     <tr>
-      <td colspan="12" style="text-align: center; padding: 2.5rem;">
+      <td colspan="14" style="text-align: center; padding: 2.5rem;">
         <div class="spinner" style="margin: 0 auto 10px auto; border-top-color: var(--accent);"></div>
         <span style="color: var(--text-muted); font-size: 0.85rem;">Carregando comprovantes extraídos pela IA...</span>
       </td>
@@ -4620,7 +4708,7 @@ async function loadTicketsData(fetchStats = false) {
     console.error("Erro ao carregar tickets florestais:", err);
     els.crudTicketsTbody.innerHTML = `
       <tr>
-        <td colspan="12" style="text-align: center; padding: 2rem; color: var(--danger);">
+        <td colspan="14" style="text-align: center; padding: 2rem; color: var(--danger);">
           <i data-lucide="alert-circle" style="width: 24px; height: 24px; margin-bottom: 6px;"></i>
           <div>Falha ao carregar tickets: ${err.message || "Erro desconhecido"}</div>
         </td>
@@ -4704,7 +4792,7 @@ function renderTicketsTable() {
   if (appState.tickets.length === 0) {
     els.crudTicketsTbody.innerHTML = `
       <tr>
-        <td colspan="12" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+        <td colspan="14" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
           <div style="width: 48px; height: 48px; margin: 0 auto 12px; border-radius: 12px; background: var(--bg-hover); display: flex; align-items: center; justify-content: center;">
             <i data-lucide="inbox" style="width: 24px; height: 24px;"></i>
           </div>
@@ -4808,7 +4896,37 @@ function renderTicketsTable() {
     }
     row.appendChild(tdPesoBruto);
 
-    // 9. NF
+    // 9. Distância
+    const tdDistancia = document.createElement("td");
+    tdDistancia.style.textAlign = "right";
+    tdDistancia.style.whiteSpace = "nowrap";
+    if (ticket.distancia !== null && ticket.distancia !== undefined && ticket.distancia !== "") {
+      const distNum = parseFloat(ticket.distancia);
+      const formattedDist = isNaN(distNum)
+        ? escapeHtml(ticket.distancia)
+        : (distNum.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " km");
+      tdDistancia.innerHTML = `<span>${formattedDist}</span>`;
+    } else {
+      tdDistancia.innerHTML = `<span style="color: var(--text-muted);">-</span>`;
+    }
+    row.appendChild(tdDistancia);
+
+    // 10. % Asfalto
+    const tdPercAsfalto = document.createElement("td");
+    tdPercAsfalto.style.textAlign = "right";
+    tdPercAsfalto.style.whiteSpace = "nowrap";
+    if (ticket.perc_asfalto !== null && ticket.perc_asfalto !== undefined && ticket.perc_asfalto !== "") {
+      const percNum = parseFloat(ticket.perc_asfalto);
+      const formattedPerc = isNaN(percNum)
+        ? escapeHtml(ticket.perc_asfalto)
+        : (percNum.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + "%");
+      tdPercAsfalto.innerHTML = `<span>${formattedPerc}</span>`;
+    } else {
+      tdPercAsfalto.innerHTML = `<span style="color: var(--text-muted);">-</span>`;
+    }
+    row.appendChild(tdPercAsfalto);
+
+    // 11. NF
     const tdNf = document.createElement("td");
     tdNf.style.whiteSpace = "nowrap";
     tdNf.textContent = ticket.ai_nf || "-";
@@ -5087,22 +5205,24 @@ function openTicketModal(ticket, preferImage = true) {
   els.ticketEditPlaca.value = ticket.ai_placa || "";
   els.ticketEditProcesso.value = ticket.ai_processo || "";
 
-  // Datetime-local format: YYYY-MM-DDTHH:mm
+  // Data/Hora formatted in DD/MM/AAAA HH:mm
   if (ticket.ai_data) {
+    els.ticketEditData.value = formatPtBrDateTime(ticket.ai_data);
     try {
       const d = new Date(ticket.ai_data);
       if (!isNaN(d.getTime())) {
         const tzOffset = d.getTimezoneOffset() * 60000;
-        const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
-        els.ticketEditData.value = localISOTime;
-      } else {
-        els.ticketEditData.value = "";
+        const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+        if (els.ticketEditDataNative) els.ticketEditDataNative.value = localISOTime;
+      } else if (els.ticketEditDataNative) {
+        els.ticketEditDataNative.value = "";
       }
     } catch {
-      els.ticketEditData.value = "";
+      if (els.ticketEditDataNative) els.ticketEditDataNative.value = "";
     }
   } else {
     els.ticketEditData.value = "";
+    if (els.ticketEditDataNative) els.ticketEditDataNative.value = "";
   }
 
   els.ticketEditRegiao.value = ticket.ai_regiao || "";
@@ -5110,6 +5230,12 @@ function openTicketModal(ticket, preferImage = true) {
   els.ticketEditDestino.value = ticket.ai_destino || "";
   els.ticketEditPesoliq.value = ticket.ai_pesoliq !== null && ticket.ai_pesoliq !== undefined ? ticket.ai_pesoliq : "";
   els.ticketEditPesobruto.value = ticket.ai_pesobruto !== null && ticket.ai_pesobruto !== undefined ? ticket.ai_pesobruto : "";
+  if (els.ticketEditDistancia) {
+    els.ticketEditDistancia.value = ticket.distancia !== null && ticket.distancia !== undefined ? ticket.distancia : "";
+  }
+  if (els.ticketEditPercAsfalto) {
+    els.ticketEditPercAsfalto.value = ticket.perc_asfalto !== null && ticket.perc_asfalto !== undefined ? ticket.perc_asfalto : "";
+  }
   els.ticketEditNf.value = ticket.ai_nf || "";
   els.ticketEditOrigem.value = ticket.origem || "";
   els.ticketEditFazenda.value = ticket.fazenda || "";
@@ -5131,6 +5257,10 @@ function closeTicketModal() {
   els.ticketModalBackdrop.classList.remove("show");
   els.ticketForm.reset();
   els.ticketEditId.value = "";
+  if (els.ticketEditData) els.ticketEditData.value = "";
+  if (els.ticketEditDataNative) els.ticketEditDataNative.value = "";
+  if (els.ticketEditDistancia) els.ticketEditDistancia.value = "";
+  if (els.ticketEditPercAsfalto) els.ticketEditPercAsfalto.value = "";
   ticketViewerState.currentTicketId = null;
   if (els.ticketZoomableImg) {
     els.ticketZoomableImg.src = "";
@@ -5150,12 +5280,13 @@ async function handleTicketFormSubmit(e, autoApprove = false) {
 
   const placa = els.ticketEditPlaca.value.trim().toUpperCase();
   const processo = els.ticketEditProcesso.value.trim();
-  const rawData = els.ticketEditData.value;
+  const rawData = els.ticketEditData.value ? els.ticketEditData.value.trim() : "";
   let aiDataIso = null;
   if (rawData) {
-    const d = new Date(rawData);
-    if (!isNaN(d.getTime())) {
-      aiDataIso = d.toISOString();
+    aiDataIso = parsePtBrDateTime(rawData);
+    if (!aiDataIso) {
+      Toast.show("Data Inválida", "Preencha a data no formato DD/MM/AAAA HH:mm.", "warning");
+      return;
     }
   }
 
@@ -5164,6 +5295,8 @@ async function handleTicketFormSubmit(e, autoApprove = false) {
   const destino = els.ticketEditDestino.value.trim() || null;
   const pesoliq = els.ticketEditPesoliq.value !== "" ? parseFloat(els.ticketEditPesoliq.value) : null;
   const pesobruto = els.ticketEditPesobruto.value !== "" ? parseFloat(els.ticketEditPesobruto.value) : null;
+  const distancia = els.ticketEditDistancia && els.ticketEditDistancia.value !== "" ? parseFloat(els.ticketEditDistancia.value) : null;
+  const percAsfalto = els.ticketEditPercAsfalto && els.ticketEditPercAsfalto.value !== "" ? parseFloat(els.ticketEditPercAsfalto.value) : null;
   const nf = els.ticketEditNf.value.trim() || "";
   const origem = els.ticketEditOrigem.value.trim() || null;
   const fazenda = els.ticketEditFazenda.value.trim() || null;
@@ -5178,6 +5311,8 @@ async function handleTicketFormSubmit(e, autoApprove = false) {
     ai_destino: destino,
     ai_pesoliq: pesoliq,
     ai_pesobruto: pesobruto,
+    distancia: distancia,
+    perc_asfalto: percAsfalto,
     ai_nf: nf,
     origem: origem,
     fazenda: fazenda,
