@@ -190,6 +190,7 @@ const els = {
   btnCancelCooperado: document.getElementById("btn-cancel-cooperado"),
 
   // Vehicles pagination and toolbar elements
+  btnExportVehiclesExcel: document.getElementById("btn-export-vehicles-excel"),
   btnRefreshVehicles: document.getElementById("btn-refresh-vehicles"),
   statVehiclesTotal: document.getElementById("stat-vehicles-total"),
   statVehiclesFrota: document.getElementById("stat-vehicles-frota"),
@@ -207,6 +208,7 @@ const els = {
   btnLastVehiclesPage: document.getElementById("btn-last-vehicles-page"),
 
   // Cooperados pagination and toolbar elements
+  btnExportCooperadosExcel: document.getElementById("btn-export-cooperados-excel"),
   btnRefreshCooperados: document.getElementById("btn-refresh-cooperados"),
   statCoopTotal: document.getElementById("stat-coop-total"),
   statCoopActive: document.getElementById("stat-coop-active"),
@@ -305,6 +307,7 @@ const els = {
   btnSaveProfile: document.getElementById("btn-save-profile"),
 
   // Ticket Florestal elements
+  btnExportTicketsExcel: document.getElementById("btn-export-tickets-excel"),
   btnRefreshTickets: document.getElementById("btn-refresh-tickets"),
   crudTicketsTbody: document.getElementById("crud-tickets-tbody"),
   statTicketsTotal: document.getElementById("stat-tickets-total"),
@@ -777,6 +780,7 @@ function setupEventListeners() {
   if (els.navBtnVehiclesAdmin) els.navBtnVehiclesAdmin.addEventListener("click", () => switchView("vehicles"));
   if (els.navBtnCooperados) els.navBtnCooperados.addEventListener("click", () => switchView("cooperados"));
   if (els.navBtnTicketFlorestal) els.navBtnTicketFlorestal.addEventListener("click", () => switchView("ticket-florestal"));
+  if (els.btnExportTicketsExcel) els.btnExportTicketsExcel.addEventListener("click", () => exportFilteredTicketsToExcel());
   if (els.btnRefreshTickets) els.btnRefreshTickets.addEventListener("click", () => loadTicketsData(true));
   if (els.btnRefreshMovements) els.btnRefreshMovements.addEventListener("click", () => loadMovementsData());
 
@@ -1050,6 +1054,7 @@ function setupEventListeners() {
   els.vehicleForm.addEventListener("submit", handleVehicleFormSubmit);
 
   // Vehicle Refresh & Filters
+  if (els.btnExportVehiclesExcel) els.btnExportVehiclesExcel.addEventListener("click", () => exportFilteredVehiclesToExcel());
   if (els.btnRefreshVehicles) els.btnRefreshVehicles.addEventListener("click", () => loadVehiclesData(true));
   if (els.crudVehiclesTypeFilter) {
     els.crudVehiclesTypeFilter.addEventListener("change", (e) => {
@@ -1115,6 +1120,7 @@ function setupEventListeners() {
   els.cooperadoForm.addEventListener("submit", handleCooperadoFormSubmit);
 
   // Cooperado Refresh & Filters
+  if (els.btnExportCooperadosExcel) els.btnExportCooperadosExcel.addEventListener("click", () => exportFilteredCooperadosToExcel());
   if (els.btnRefreshCooperados) els.btnRefreshCooperados.addEventListener("click", () => loadCooperadosData(true));
   if (els.crudCooperadosStatusFilter) {
     els.crudCooperadosStatusFilter.addEventListener("change", (e) => {
@@ -5381,6 +5387,557 @@ async function deleteTicket(id, placa, processo) {
     Toast.show("Erro ao excluir", err.message || "Não foi possível excluir o registro.", "error");
   }
 }
+
+// ==========================================
+// EXPORT TO EXCEL: TICKET FLORESTAL
+// ==========================================
+
+let isExportingTickets = false;
+
+async function exportFilteredTicketsToExcel() {
+  if (isExportingTickets) return;
+  if (!els.btnExportTicketsExcel) return;
+
+  const originalBtnHtml = els.btnExportTicketsExcel.innerHTML;
+
+  try {
+    isExportingTickets = true;
+    els.btnExportTicketsExcel.disabled = true;
+    els.btnExportTicketsExcel.innerHTML = `
+      <div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; border-top-color: var(--accent);"></div>
+      <span>Carregando dados...</span>
+    `;
+
+    const search = appState.ticketsSearch;
+    const statusFilter = appState.ticketsStatusFilter;
+    const periodFilter = appState.ticketsPeriodFilter;
+    const regiaoFilter = appState.ticketsRegiaoFilter;
+    const sort = appState.ticketsSort;
+
+    // Fetch in batches of 1000 records to support large datasets safely
+    const batchSize = 1000;
+    let allTickets = [];
+    let from = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      let query = supabaseClient
+        .from("xcvt_comprovantes")
+        .select("*");
+
+      // 1. Text Search Filter
+      if (search) {
+        query = query.or(
+          `ai_placa.ilike.%${search}%,ai_processo.ilike.%${search}%,ai_regiao.ilike.%${search}%,ai_talhao.ilike.%${search}%,ai_destino.ilike.%${search}%,ai_nf.ilike.%${search}%,origem.ilike.%${search}%,fazenda.ilike.%${search}%`
+        );
+      }
+
+      // 2. Status Filter
+      if (statusFilter === "approved") {
+        query = query.eq("aprovado", true);
+      } else if (statusFilter === "pending") {
+        query = query.or("aprovado.eq.false,aprovado.is.null");
+      }
+
+      // 3. Period Filter
+      if (periodFilter && periodFilter !== "all") {
+        const days = parseInt(periodFilter, 10);
+        if (!isNaN(days) && days > 0) {
+          const sinceDate = new Date();
+          sinceDate.setDate(sinceDate.getDate() - days);
+          query = query.gte("created_at", sinceDate.toISOString());
+        }
+      }
+
+      // 4. Region Filter
+      if (regiaoFilter && regiaoFilter !== "all") {
+        query = query.eq("ai_regiao", regiaoFilter);
+      }
+
+      // 5. Sorting
+      switch (sort) {
+        case "created_at_asc":
+          query = query.order("created_at", { ascending: true });
+          break;
+        case "ai_data_desc":
+          query = query.order("ai_data", { ascending: false, nullsFirst: false });
+          break;
+        case "ai_placa_asc":
+          query = query.order("ai_placa", { ascending: true });
+          break;
+        case "ai_processo_asc":
+          query = query.order("ai_processo", { ascending: true });
+          break;
+        case "created_at_desc":
+        default:
+          query = query.order("created_at", { ascending: false });
+          break;
+      }
+
+      query = query.range(from, from + batchSize - 1);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        hasMore = false;
+      } else {
+        allTickets = allTickets.concat(data);
+        if (data.length < batchSize) {
+          hasMore = false;
+        } else {
+          from += batchSize;
+          els.btnExportTicketsExcel.innerHTML = `
+            <div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; border-top-color: var(--accent);"></div>
+            <span>Exportando (${allTickets.length})...</span>
+          `;
+        }
+      }
+
+      // Safety limit: up to 25,000 records
+      if (from >= 25000) break;
+    }
+
+    if (allTickets.length === 0) {
+      Toast.show(
+        "Nenhum Registro",
+        "Nenhum ticket encontrado com os filtros selecionados para exportação.",
+        "warning"
+      );
+      return;
+    }
+
+    els.btnExportTicketsExcel.innerHTML = `
+      <div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; border-top-color: var(--accent);"></div>
+      <span>Gerando planilha...</span>
+    `;
+
+    // Map records to formatted rows for Excel
+    const rows = allTickets.map(t => {
+      const parseNum = (val) => {
+        if (val === null || val === undefined || val === "") return "";
+        const n = parseFloat(val);
+        return isNaN(n) ? "" : n;
+      };
+
+      return {
+        "Status": t.aprovado === true ? "Aprovado" : "Pendente",
+        "Placa": t.ai_placa ? String(t.ai_placa).toUpperCase() : "",
+        "Processo": t.ai_processo || "",
+        "Data do Ticket": formatPtBrDateTime(t.ai_data),
+        "Região": t.ai_regiao || "",
+        "Talhão": t.ai_talhao || "",
+        "Destino": t.ai_destino || "",
+        "Origem": t.origem || "",
+        "Fazenda": t.fazenda || "",
+        "NF": t.ai_nf || "",
+        "Peso Líquido (t)": parseNum(t.ai_pesoliq),
+        "Peso Bruto (t)": parseNum(t.ai_pesobruto),
+        "Distância (km)": parseNum(t.distancia),
+        "% Asfalto": parseNum(t.perc_asfalto),
+        "Parecer IA": t.ai_message || "",
+        "Data de Registro": formatPtBrDateTime(t.created_at),
+        "ID": t.id || ""
+      };
+    });
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const fileName = `tickets_florestais_${dateStr}.xlsx`;
+
+    if (typeof XLSX !== "undefined" && XLSX.utils && XLSX.writeFile) {
+      const ws = XLSX.utils.json_to_sheet(rows);
+
+      // Ergonomic column widths for spreadsheet
+      ws["!cols"] = [
+        { wch: 14 }, // Status
+        { wch: 13 }, // Placa
+        { wch: 14 }, // Processo
+        { wch: 19 }, // Data do Ticket
+        { wch: 18 }, // Região
+        { wch: 14 }, // Talhão
+        { wch: 18 }, // Destino
+        { wch: 22 }, // Origem
+        { wch: 22 }, // Fazenda
+        { wch: 14 }, // NF
+        { wch: 16 }, // Peso Líquido (t)
+        { wch: 16 }, // Peso Bruto (t)
+        { wch: 15 }, // Distância (km)
+        { wch: 12 }, // % Asfalto
+        { wch: 45 }, // Parecer IA
+        { wch: 19 }, // Data de Registro
+        { wch: 38 }  // ID
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Tickets Florestais");
+      XLSX.writeFile(wb, fileName);
+    } else {
+      // Robust Fallback: CSV with UTF-8 BOM and semicolon separator
+      downloadTicketsCsvFallback(rows, fileName);
+    }
+
+    Toast.show(
+      "Planilha Exportada",
+      `${rows.length} ticket(s) florestal(is) exportado(s) com sucesso.`,
+      "success"
+    );
+  } catch (err) {
+    console.error("Erro ao exportar tickets filtrados para Excel:", err);
+    Toast.show(
+      "Erro na Exportação",
+      err.message || "Não foi possível gerar a planilha dos dados filtrados.",
+      "error"
+    );
+  } finally {
+    isExportingTickets = false;
+    if (els.btnExportTicketsExcel) {
+      els.btnExportTicketsExcel.disabled = false;
+      els.btnExportTicketsExcel.innerHTML = originalBtnHtml;
+      lucide.createIcons();
+    }
+  }
+}
+
+function downloadTicketsCsvFallback(rows, baseFileName) {
+  if (!rows || rows.length === 0) return;
+  const headers = Object.keys(rows[0]);
+  const lines = [];
+
+  // CSV Header
+  lines.push(headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(";"));
+
+  // CSV Rows
+  rows.forEach(r => {
+    const line = headers.map(h => {
+      const v = r[h] !== null && r[h] !== undefined ? String(r[h]) : "";
+      return `"${v.replace(/"/g, '""')}"`;
+    }).join(";");
+    lines.push(line);
+  });
+
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = baseFileName.replace(/\.xlsx$/i, ".csv");
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ==============================================================================
+// EXPORT TO EXCEL VIA SUPABASE FUNCTION: VEÍCULOS & COOPERADOS (ADMIN ONLY)
+// ==============================================================================
+
+let isExportingVehicles = false;
+
+async function exportFilteredVehiclesToExcel() {
+  if (isExportingVehicles) return;
+  if (!els.btnExportVehiclesExcel) return;
+
+  // 1. Validação de perfil Admin no client
+  if (!appState.isAdmin) {
+    Toast.show("Acesso Negado", "Apenas administradores podem exportar o cadastro de veículos.", "error");
+    return;
+  }
+
+  const originalHtml = els.btnExportVehiclesExcel.innerHTML;
+
+  try {
+    isExportingVehicles = true;
+    els.btnExportVehiclesExcel.disabled = true;
+    els.btnExportVehiclesExcel.innerHTML = `
+      <div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; border-top-color: var(--accent);"></div>
+      <span>Requisitando function...</span>
+    `;
+
+    const filters = {
+      search: appState.vehiclesSearch,
+      type: appState.vehiclesTypeFilter,
+      frota: appState.vehiclesFrotaFilter,
+      sort: appState.vehiclesSort
+    };
+
+    // 2. Requisição via Supabase Function (dupla validação de profiles.role = admin na function)
+    let records = [];
+    let functionErrorMsg = null;
+
+    try {
+      const { data: responseData, error: funcError } = await supabaseClient.functions.invoke("export-cadastros", {
+        body: {
+          entity: "veiculos",
+          filters: filters
+        }
+      });
+
+      if (funcError) {
+        if (responseData && responseData.error) {
+          throw new Error(responseData.error);
+        }
+        functionErrorMsg = funcError.message || (typeof funcError === "string" ? funcError : "Erro na function");
+      } else if (responseData && responseData.error) {
+        throw new Error(responseData.error);
+      } else if (responseData && responseData.data) {
+        records = responseData.data;
+      }
+    } catch (invErr) {
+      functionErrorMsg = invErr.message;
+      if (invErr.message && invErr.message.includes("Acesso Negado")) {
+        throw invErr;
+      }
+    }
+
+    // Fallback via RPC se a Edge Function não estiver implantada ainda
+    if (records.length === 0 && functionErrorMsg) {
+      console.warn("Tentando fallback via RPC export_cadastros...", functionErrorMsg);
+      const { data: rpcResponse, error: rpcError } = await supabaseClient.rpc("export_cadastros", {
+        entity: "veiculos",
+        filters: filters
+      });
+
+      if (rpcError) {
+        throw new Error(
+          functionErrorMsg.includes("Acesso Negado") || rpcError.message.includes("Acesso Negado")
+            ? "Acesso Negado: Apenas administradores podem exportar cadastros."
+            : `Falha na requisição da Function: ${functionErrorMsg}. Certifique-se de configurar a function 'export-cadastros' no Supabase.`
+        );
+      } else if (rpcResponse && rpcResponse.data) {
+        records = rpcResponse.data;
+      } else {
+        throw new Error(functionErrorMsg);
+      }
+    }
+
+    if (records.length === 0) {
+      Toast.show("Nenhum Registro", "Nenhum veículo encontrado com os filtros selecionados para exportação.", "warning");
+      return;
+    }
+
+    els.btnExportVehiclesExcel.innerHTML = `
+      <div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; border-top-color: var(--accent);"></div>
+      <span>Gerando planilha...</span>
+    `;
+
+    // 3. Formatação dos registros para Excel
+    const rows = records.map(v => {
+      let coopName = "Não associado";
+      if (v.cooperado && typeof v.cooperado === "object" && v.cooperado.nome) {
+        coopName = v.cooperado.codigo ? `${v.cooperado.nome} (${v.cooperado.codigo})` : v.cooperado.nome;
+      } else if (v.cooperado) {
+        coopName = getCooperadoName(v.cooperado);
+      }
+
+      return {
+        "Placa Principal": v.placa ? String(v.placa).toUpperCase() : "",
+        "Placa Reboque 1": v.placa2 ? String(v.placa2).toUpperCase() : "-",
+        "Placa Reboque 2": v.placa3 ? String(v.placa3).toUpperCase() : "-",
+        "Cooperado": coopName,
+        "Tipo de Veículo": v.tipo || "N/D",
+        "Vínculo": v.frota ? "Frota" : "Não Frota",
+        "Status": v.status === "inativo" ? "Inativo" : "Ativo",
+        "Data de Cadastro": formatPtBrDateTime(v.created_at),
+        "ID": v.id || ""
+      };
+    });
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const fileName = `cadastro_veiculos_${dateStr}.xlsx`;
+
+    if (typeof XLSX !== "undefined" && XLSX.utils && XLSX.writeFile) {
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [
+        { wch: 16 }, // Placa Principal
+        { wch: 16 }, // Placa Reboque 1
+        { wch: 16 }, // Placa Reboque 2
+        { wch: 32 }, // Cooperado
+        { wch: 20 }, // Tipo de Veículo
+        { wch: 14 }, // Vínculo
+        { wch: 12 }, // Status
+        { wch: 19 }, // Data de Cadastro
+        { wch: 38 }  // ID
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Veículos");
+      XLSX.writeFile(wb, fileName);
+    } else {
+      downloadTicketsCsvFallback(rows, fileName);
+    }
+
+    Toast.show(
+      "Planilha Exportada",
+      `${rows.length} veículo(s) exportado(s) com sucesso via Supabase Function.`,
+      "success"
+    );
+  } catch (err) {
+    console.error("Erro ao exportar veículos:", err);
+    Toast.show("Erro na Exportação", err.message || "Não foi possível exportar os veículos.", "error");
+  } finally {
+    isExportingVehicles = false;
+    if (els.btnExportVehiclesExcel) {
+      els.btnExportVehiclesExcel.disabled = false;
+      els.btnExportVehiclesExcel.innerHTML = originalHtml;
+      lucide.createIcons();
+    }
+  }
+}
+
+let isExportingCooperados = false;
+
+async function exportFilteredCooperadosToExcel() {
+  if (isExportingCooperados) return;
+  if (!els.btnExportCooperadosExcel) return;
+
+  // 1. Validação de perfil Admin no client
+  if (!appState.isAdmin) {
+    Toast.show("Acesso Negado", "Apenas administradores podem exportar o cadastro de cooperados.", "error");
+    return;
+  }
+
+  const originalHtml = els.btnExportCooperadosExcel.innerHTML;
+
+  try {
+    isExportingCooperados = true;
+    els.btnExportCooperadosExcel.disabled = true;
+    els.btnExportCooperadosExcel.innerHTML = `
+      <div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; border-top-color: var(--accent);"></div>
+      <span>Requisitando function...</span>
+    `;
+
+    const filters = {
+      search: appState.cooperadosSearch,
+      status: appState.cooperadosStatusFilter,
+      contacts: appState.cooperadosContactsFilter,
+      sort: appState.cooperadosSort
+    };
+
+    // 2. Requisição via Supabase Function (dupla validação de profiles.role = admin na function)
+    let records = [];
+    let functionErrorMsg = null;
+
+    try {
+      const { data: responseData, error: funcError } = await supabaseClient.functions.invoke("export-cadastros", {
+        body: {
+          entity: "cooperados",
+          filters: filters
+        }
+      });
+
+      if (funcError) {
+        if (responseData && responseData.error) {
+          throw new Error(responseData.error);
+        }
+        functionErrorMsg = funcError.message || (typeof funcError === "string" ? funcError : "Erro na function");
+      } else if (responseData && responseData.error) {
+        throw new Error(responseData.error);
+      } else if (responseData && responseData.data) {
+        records = responseData.data;
+      }
+    } catch (invErr) {
+      functionErrorMsg = invErr.message;
+      if (invErr.message && invErr.message.includes("Acesso Negado")) {
+        throw invErr;
+      }
+    }
+
+    // Fallback via RPC se a Edge Function não estiver implantada ainda
+    if (records.length === 0 && functionErrorMsg) {
+      console.warn("Tentando fallback via RPC export_cadastros...", functionErrorMsg);
+      const { data: rpcResponse, error: rpcError } = await supabaseClient.rpc("export_cadastros", {
+        entity: "cooperados",
+        filters: filters
+      });
+
+      if (rpcError) {
+        throw new Error(
+          functionErrorMsg.includes("Acesso Negado") || rpcError.message.includes("Acesso Negado")
+            ? "Acesso Negado: Apenas administradores podem exportar cadastros."
+            : `Falha na requisição da Function: ${functionErrorMsg}. Certifique-se de configurar a function 'export-cadastros' no Supabase.`
+        );
+      } else if (rpcResponse && rpcResponse.data) {
+        records = rpcResponse.data;
+      } else {
+        throw new Error(functionErrorMsg);
+      }
+    }
+
+    if (records.length === 0) {
+      Toast.show("Nenhum Registro", "Nenhum cooperado encontrado com os filtros selecionados para exportação.", "warning");
+      return;
+    }
+
+    els.btnExportCooperadosExcel.innerHTML = `
+      <div class="spinner" style="width: 14px; height: 14px; border-width: 2px; margin: 0; border-top-color: var(--accent);"></div>
+      <span>Gerando planilha...</span>
+    `;
+
+    // 3. Formatação dos registros para Excel
+    const rows = records.map(c => {
+      const contactsArr = Array.isArray(c.idContatos)
+        ? c.idContatos
+        : (typeof c.idContatos === "string" && c.idContatos.startsWith("{")
+            ? c.idContatos.replace(/[{}]/g, "").split(",").filter(Boolean)
+            : []);
+
+      return {
+        "Código": c.codigo || "-",
+        "Nome do Cooperado": c.nome || "Sem Nome",
+        "IDs de Contato (idContatos)": contactsArr.length > 0 ? contactsArr.join(", ") : "Nenhum contato",
+        "Total de Contatos": contactsArr.length,
+        "Status": c.status === "inativo" ? "Inativo" : "Ativo",
+        "Data de Cadastro": formatPtBrDateTime(c.created_at),
+        "ID": c.id || ""
+      };
+    });
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+    const fileName = `cadastro_cooperados_${dateStr}.xlsx`;
+
+    if (typeof XLSX !== "undefined" && XLSX.utils && XLSX.writeFile) {
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [
+        { wch: 14 }, // Código
+        { wch: 34 }, // Nome do Cooperado
+        { wch: 32 }, // IDs de Contato
+        { wch: 16 }, // Total de Contatos
+        { wch: 12 }, // Status
+        { wch: 19 }, // Data de Cadastro
+        { wch: 38 }  // ID
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Cooperados");
+      XLSX.writeFile(wb, fileName);
+    } else {
+      downloadTicketsCsvFallback(rows, fileName);
+    }
+
+    Toast.show(
+      "Planilha Exportada",
+      `${rows.length} cooperado(s) exportado(s) com sucesso via Supabase Function.`,
+      "success"
+    );
+  } catch (err) {
+    console.error("Erro ao exportar cooperados:", err);
+    Toast.show("Erro na Exportação", err.message || "Não foi possível exportar os cooperados.", "error");
+  } finally {
+    isExportingCooperados = false;
+    if (els.btnExportCooperadosExcel) {
+      els.btnExportCooperadosExcel.disabled = false;
+      els.btnExportCooperadosExcel.innerHTML = originalHtml;
+      lucide.createIcons();
+    }
+  }
+}
+
+
 
 
 

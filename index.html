@@ -7,13 +7,16 @@
   <title>Central de Fretes Cootravale</title>
 
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.2.0">
+  <link rel="stylesheet" href="style.css?v=1.2.2">
 
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- SheetJS (xlsx) for Excel Export CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -321,6 +324,11 @@
             <span class="crud-subtitle">Gerenciamento de veículos da central de fretes</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-export-excel" id="btn-export-vehicles-excel"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Exportar veículos filtrados para Excel (.xlsx)">
+              <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i>
+              <span>Exportar Excel</span>
+            </button>
             <button class="btn btn-sm btn-secondary" id="btn-refresh-vehicles"
               style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
               <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
@@ -469,6 +477,11 @@
             <span class="crud-subtitle">Gerenciamento de cooperados e seus contatos</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-export-excel" id="btn-export-cooperados-excel"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Exportar cooperados filtrados para Excel (.xlsx)">
+              <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i>
+              <span>Exportar Excel</span>
+            </button>
             <button class="btn btn-sm btn-secondary" id="btn-refresh-cooperados"
               style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
               <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
@@ -909,6 +922,11 @@
                 style="font-size: 0.78rem;">xcvt_comprovantes</code>)</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-export-excel" id="btn-export-tickets-excel"
+              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Exportar tickets filtrados para Excel (.xlsx)">
+              <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i>
+              <span>Exportar Excel</span>
+            </button>
             <button class="btn btn-sm btn-secondary" id="btn-refresh-tickets"
               style="width: auto; display: flex; align-items: center; gap: 6px;" title="Atualizar dados">
               <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
@@ -1774,7 +1792,7 @@
   </div>
 
   <!-- Main JavaScript File -->
-  <script src="app.js?v=1.3.1"></script>
+  <script src="app.js?v=1.3.3"></script>
 </body>
 
 </html>
