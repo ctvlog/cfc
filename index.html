@@ -7,7 +7,7 @@
   <title>Central de Fretes Cootravale</title>
 
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=1.2.2">
+  <link rel="stylesheet" href="style.css?v=1.2.3">
 
   <!-- Supabase JS Client CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -242,7 +242,7 @@
           </button>
           <div class="header-title-container">
             <h2 class="header-title">Filas de Carregamento</h2>
-            <span class="header-subtitle">Central de Fretes | v1.07</span>
+            <span class="header-subtitle">Central de Fretes | v1.08</span>
           </div>
         </div>
 
@@ -325,7 +325,8 @@
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <button type="button" class="btn btn-sm btn-export-excel" id="btn-export-vehicles-excel"
-              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Exportar veículos filtrados para Excel (.xlsx)">
+              style="width: auto; display: flex; align-items: center; gap: 6px;"
+              title="Exportar veículos filtrados para Excel (.xlsx)">
               <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i>
               <span>Exportar Excel</span>
             </button>
@@ -478,7 +479,8 @@
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <button type="button" class="btn btn-sm btn-export-excel" id="btn-export-cooperados-excel"
-              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Exportar cooperados filtrados para Excel (.xlsx)">
+              style="width: auto; display: flex; align-items: center; gap: 6px;"
+              title="Exportar cooperados filtrados para Excel (.xlsx)">
               <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i>
               <span>Exportar Excel</span>
             </button>
@@ -923,7 +925,8 @@
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <button type="button" class="btn btn-sm btn-export-excel" id="btn-export-tickets-excel"
-              style="width: auto; display: flex; align-items: center; gap: 6px;" title="Exportar tickets filtrados para Excel (.xlsx)">
+              style="width: auto; display: flex; align-items: center; gap: 6px;"
+              title="Exportar tickets filtrados para Excel (.xlsx)">
               <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i>
               <span>Exportar Excel</span>
             </button>
@@ -1085,6 +1088,55 @@
 
     </main>
   </section>
+
+  <!-- REORDER QUEUE MODAL (ADMIN ONLY) -->
+  <div class="modal-backdrop" id="reorder-queue-modal">
+    <div class="modal-card modal-reorder-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="reorder-modal-icon">
+            <i data-lucide="arrow-up-down" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title" id="reorder-queue-modal-title">Reordenar Fila</h3>
+            <span class="reorder-modal-subtitle" id="reorder-queue-modal-subtitle">Arraste os veículos para alterar a
+              ordem da fila</span>
+          </div>
+        </div>
+        <button class="modal-close" id="reorder-queue-modal-close" type="button" title="Fechar">
+          <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div class="reorder-instruction-banner">
+          <i data-lucide="info" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px;"></i>
+          <span><strong>Administrador:</strong> Arraste os cards para reposicionar na fila ou utilize as setas <strong>▲
+              / ▼</strong>. Ao salvar, a data/hora de referência (<code>dthRef</code>) será recalculada em ±1s para
+            atualizar a ordem.</span>
+        </div>
+        <div class="reorder-list-container" id="reorder-vehicle-list">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+      <div class="modal-footer"
+        style="padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.15);">
+        <div class="reorder-status-hint" id="reorder-status-hint">
+          <span class="reorder-count-badge" id="reorder-total-count">0 veículos</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" id="btn-reorder-cancel" type="button">Cancelar</button>
+          <button class="btn btn-secondary" id="btn-reorder-reset" type="button" title="Restaurar posições originais">
+            <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
+            <span>Restaurar</span>
+          </button>
+          <button class="btn btn-primary" id="btn-reorder-save" type="button">
+            <i data-lucide="save" style="width: 14px; height: 14px;"></i>
+            <span id="btn-reorder-save-text">Salvar Nova Ordem</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- REFUSALS HISTORY MODAL -->
   <div class="modal-backdrop" id="modal-backdrop">
@@ -1792,7 +1844,7 @@
   </div>
 
   <!-- Main JavaScript File -->
-  <script src="app.js?v=1.3.3"></script>
+  <script src="app.js?v=1.3.4"></script>
 </body>
 
 </html>

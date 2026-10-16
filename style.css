@@ -2027,6 +2027,12 @@ body {
   background: var(--danger-bg);
 }
 
+.timeline-badge.reordenacao {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg-glow);
+}
+
 .timeline-content {
   flex: 1;
   background: var(--bg-card);
@@ -2076,6 +2082,11 @@ body {
 .timeline-action.retirada {
   color: var(--danger);
   background: var(--danger-bg);
+}
+
+.timeline-action.reordenacao {
+  color: var(--accent);
+  background: var(--accent-bg-glow);
 }
 
 .timeline-date {
@@ -3368,5 +3379,305 @@ body {
     height: auto !important;
     overflow-y: visible !important;
     padding-right: 0;
+  }
+}
+
+/* ==============================================================================
+   QUEUE REORDERING STYLES (ADMIN ONLY)
+   ============================================================================== */
+
+/* Queue Header Action & Button */
+.queue-column-header.is-admin-header {
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.queue-column-header.is-admin-header:hover {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.queue-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-reorder-queue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-reorder-queue:hover {
+  background: var(--accent);
+  color: #06110b;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-reorder-queue:active {
+  transform: translateY(0);
+}
+
+/* Reorder Modal Card */
+.modal-reorder-card {
+  max-width: 680px;
+  width: 95%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-color);
+}
+
+.reorder-modal-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-bg-glow);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.reorder-modal-subtitle {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+/* Instruction Banner */
+.reorder-instruction-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(96, 165, 250, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  color: #93c5fd;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin-bottom: 14px;
+}
+
+.reorder-instruction-banner code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #60a5fa;
+}
+
+/* Reorder List Container */
+.reorder-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(88vh - 250px);
+  overflow-y: auto;
+  padding-right: 4px;
+  scroll-behavior: smooth;
+}
+
+.reorder-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.reorder-list-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+/* Individual Reorder Item */
+.reorder-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  position: relative;
+}
+
+.reorder-item:hover {
+  border-color: var(--border-hover);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.reorder-item.dragging {
+  opacity: 0.35;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px dashed var(--accent);
+  transform: scale(0.99);
+}
+
+.reorder-item.drag-over-top {
+  border-top: 2px solid var(--accent) !important;
+  box-shadow: 0 -4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.reorder-item.drag-over-bottom {
+  border-bottom: 2px solid var(--accent) !important;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.reorder-item.reorder-changed {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.reorder-item .drag-handle {
+  cursor: grab;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 3px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.reorder-item .drag-handle:hover,
+.reorder-item:hover .drag-handle {
+  color: var(--accent);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.reorder-item .drag-handle:active {
+  cursor: grabbing;
+}
+
+.reorder-pos-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--text-color);
+  flex-shrink: 0;
+}
+
+.reorder-item.reorder-changed .reorder-pos-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.reorder-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reorder-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reorder-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.reorder-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.btn-move-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  border-radius: 5px;
+  width: 26px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.btn-move-item:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-move-item:disabled {
+  opacity: 0.22;
+  cursor: not-allowed;
+}
+
+.reorder-count-badge {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.reorder-item-shift-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .modal-reorder-card {
+    width: 98%;
+    max-height: 94vh;
+  }
+
+  .reorder-item {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .reorder-item-meta {
+    font-size: 0.68rem;
+    gap: 5px;
   }
 }

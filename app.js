@@ -33,6 +33,14 @@ let appState = {
     countdown: 180,
     maxSeconds: 180
   },
+  // Reorder Queue State (Admin Only)
+  reorder: {
+    queueName: "",
+    originalList: [],
+    currentList: [],
+    draggedIndex: null,
+    isSaving: false
+  },
   // Vehicles CRUD state
   vehicles: [],
   vehiclesSearch: "",
@@ -139,6 +147,19 @@ const els = {
   locationModalSubtitle: document.getElementById("location-modal-subtitle"),
   locationModalBody: document.getElementById("location-modal-body"),
   locationModalClose: document.getElementById("location-modal-close"),
+
+  // Reorder Queue Modal (Admin Only)
+  reorderQueueModal: document.getElementById("reorder-queue-modal"),
+  reorderQueueModalTitle: document.getElementById("reorder-queue-modal-title"),
+  reorderQueueModalSubtitle: document.getElementById("reorder-queue-modal-subtitle"),
+  reorderQueueModalClose: document.getElementById("reorder-queue-modal-close"),
+  reorderVehicleList: document.getElementById("reorder-vehicle-list"),
+  reorderTotalCount: document.getElementById("reorder-total-count"),
+  reorderStatusHint: document.getElementById("reorder-status-hint"),
+  btnReorderCancel: document.getElementById("btn-reorder-cancel"),
+  btnReorderReset: document.getElementById("btn-reorder-reset"),
+  btnReorderSave: document.getElementById("btn-reorder-save"),
+  btnReorderSaveText: document.getElementById("btn-reorder-save-text"),
 
   // Admin and CRUD elements
   sidebarAdminNav: document.getElementById("sidebar-admin-nav"),
@@ -764,6 +785,31 @@ function setupEventListeners() {
     });
   }
 
+  // Reorder Queue Modal Event Listeners
+  if (els.reorderQueueModalClose) {
+    els.reorderQueueModalClose.addEventListener("click", closeReorderQueueModal);
+  }
+  if (els.btnReorderCancel) {
+    els.btnReorderCancel.addEventListener("click", closeReorderQueueModal);
+  }
+  if (els.btnReorderReset) {
+    els.btnReorderReset.addEventListener("click", () => {
+      if (appState.reorder.originalList && appState.reorder.originalList.length > 0) {
+        appState.reorder.currentList = appState.reorder.originalList.map(v => ({ ...v }));
+        renderReorderList();
+        Toast.show("Ordem Restaurada", "A ordem original dos veículos foi restabelecida na tela.", "info");
+      }
+    });
+  }
+  if (els.btnReorderSave) {
+    els.btnReorderSave.addEventListener("click", saveQueueReorder);
+  }
+  if (els.reorderQueueModal) {
+    els.reorderQueueModal.addEventListener("click", (e) => {
+      if (e.target === els.reorderQueueModal) closeReorderQueueModal();
+    });
+  }
+
   // Sub-menu category accordion toggles
   document.querySelectorAll(".menu-category-header").forEach(header => {
     header.addEventListener("click", () => {
@@ -1303,6 +1349,7 @@ function setupEventListeners() {
       closeAccessModal();
       closeLinkCooperadosModal();
       closeProfileModal();
+      closeReorderQueueModal();
     }
   });
 }
@@ -1522,13 +1569,39 @@ function renderQueuesGrid() {
 
     // Column Header
     const header = document.createElement("div");
-    header.className = "queue-column-header";
+    const isAdmin = appState.isAdmin === true;
+    header.className = `queue-column-header ${isAdmin ? "is-admin-header" : ""}`;
+    if (isAdmin) {
+      header.title = "Clique para reordenar os veículos desta fila (Admin)";
+      header.addEventListener("click", () => {
+        openReorderQueueModal(queueName);
+      });
+    }
+
+    const reorderBtnHtml = isAdmin && vehicles.length > 1
+      ? `<button class="btn-reorder-queue" type="button" title="Reordenar veículos (Admin)">
+           <i data-lucide="arrow-up-down" style="width: 12px; height: 12px;"></i>
+           <span>Reordenar</span>
+         </button>`
+      : "";
+
     header.innerHTML = `
       <div class="queue-title-wrapper" title="${queueName}">
         <span class="queue-title">${queueName}</span>
       </div>
-      <span class="queue-badge">${vehicles.length}</span>
+      <div class="queue-header-actions">
+        ${reorderBtnHtml}
+        <span class="queue-badge">${vehicles.length}</span>
+      </div>
     `;
+
+    const reorderBtn = header.querySelector(".btn-reorder-queue");
+    if (reorderBtn) {
+      reorderBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openReorderQueueModal(queueName);
+      });
+    }
     col.appendChild(header);
 
     // Column Table Body
@@ -1892,6 +1965,445 @@ function openVehicleLocationModal(vehicle) {
 function closeLocationModal() {
   if (els.locationModalBackdrop) {
     els.locationModalBackdrop.classList.remove("show");
+  }
+}
+
+// ==============================================================================
+// QUEUE REORDERING SYSTEM (ADMIN ONLY)
+// ==============================================================================
+
+function openReorderQueueModal(queueName) {
+  if (!appState.isAdmin) {
+    Toast.show("Acesso Restrito", "Apenas administradores podem reordenar veículos na fila.", "warning");
+    return;
+  }
+
+  const vehicles = (appState.filteredQueues[queueName] || []).slice();
+  if (vehicles.length <= 1) {
+    Toast.show("Fila com poucos veículos", "São necessários pelo menos 2 veículos na fila para alterar a ordem.", "info");
+    return;
+  }
+
+  // Clone list for isolated reordering edits
+  appState.reorder = {
+    queueName: queueName,
+    originalList: vehicles.map(v => ({ ...v })),
+    currentList: vehicles.map(v => ({ ...v })),
+    draggedIndex: null,
+    isSaving: false
+  };
+
+  if (els.reorderQueueModalTitle) {
+    els.reorderQueueModalTitle.textContent = `Reordenar Fila • ${queueName}`;
+  }
+  if (els.reorderQueueModalSubtitle) {
+    els.reorderQueueModalSubtitle.textContent = `${vehicles.length} veículo(s) nesta fila. Arraste ou use as setas para reposicionar.`;
+  }
+  if (els.reorderTotalCount) {
+    els.reorderTotalCount.textContent = `${vehicles.length} veículos na fila`;
+  }
+
+  renderReorderList();
+
+  if (els.reorderQueueModal) {
+    els.reorderQueueModal.classList.add("show");
+  }
+  lucide.createIcons();
+}
+
+function closeReorderQueueModal() {
+  if (els.reorderQueueModal) {
+    els.reorderQueueModal.classList.remove("show");
+  }
+  appState.reorder = {
+    queueName: "",
+    originalList: [],
+    currentList: [],
+    draggedIndex: null,
+    isSaving: false
+  };
+}
+
+function applyTimestampAdjustments(list, movedIndex) {
+  const n = list.length;
+  if (n <= 1) return;
+
+  const movedItem = list[movedIndex];
+  if (!movedItem) return;
+
+  const toMs = (d) => {
+    const ms = d ? new Date(d).getTime() : 0;
+    return isNaN(ms) ? Date.now() : ms;
+  };
+
+  if (movedIndex === 0) {
+    // Moved to the top of queue: 1 second less than posterior (list[1])
+    const nextMs = toMs(list[1].dthRef || list[1].created_at);
+    movedItem.dthRef = new Date(nextMs - 1000).toISOString();
+  } else if (movedIndex === n - 1) {
+    // Moved to the bottom of queue: 1 second more than anterior (list[n-2])
+    const prevMs = toMs(list[n - 2].dthRef || list[n - 2].created_at);
+    movedItem.dthRef = new Date(prevMs + 1000).toISOString();
+  } else {
+    // Moved between list[movedIndex - 1] and list[movedIndex + 1]
+    const prevMs = toMs(list[movedIndex - 1].dthRef || list[movedIndex - 1].created_at);
+    const nextMs = toMs(list[movedIndex + 1].dthRef || list[movedIndex + 1].created_at);
+
+    const candMs = prevMs + 1000;
+    if (candMs < nextMs) {
+      movedItem.dthRef = new Date(candMs).toISOString();
+    } else {
+      // Gap is tight (<= 1s): set moved item to prev + 1000ms, and push subsequent items
+      movedItem.dthRef = new Date(candMs).toISOString();
+      for (let k = movedIndex + 1; k < n; k++) {
+        const currKMs = toMs(list[k].dthRef || list[k].created_at);
+        const prevKMs = toMs(list[k - 1].dthRef || list[k - 1].created_at);
+        if (currKMs <= prevKMs) {
+          list[k].dthRef = new Date(prevKMs + 1000).toISOString();
+        }
+      }
+    }
+  }
+
+  // Verification pass: strictly ascending from 0 to n-1
+  for (let i = 1; i < n; i++) {
+    const pMs = toMs(list[i - 1].dthRef || list[i - 1].created_at);
+    const cMs = toMs(list[i].dthRef || list[i].created_at);
+    if (cMs <= pMs) {
+      list[i].dthRef = new Date(pMs + 1000).toISOString();
+    }
+  }
+}
+
+function moveReorderItem(fromIndex, toIndex) {
+  const list = appState.reorder.currentList;
+  if (fromIndex < 0 || fromIndex >= list.length || toIndex < 0 || toIndex >= list.length || fromIndex === toIndex) return;
+
+  const [movedItem] = list.splice(fromIndex, 1);
+  list.splice(toIndex, 0, movedItem);
+
+  applyTimestampAdjustments(list, toIndex);
+  renderReorderList();
+}
+
+function setupReorderDragEvents(itemEl, index) {
+  itemEl.addEventListener("dragstart", (e) => {
+    appState.reorder.draggedIndex = index;
+    itemEl.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  });
+
+  itemEl.addEventListener("dragend", () => {
+    itemEl.classList.remove("dragging");
+    document.querySelectorAll(".reorder-item").forEach(el => {
+      el.classList.remove("drag-over-top", "drag-over-bottom");
+    });
+    appState.reorder.draggedIndex = null;
+  });
+
+  itemEl.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+
+    const draggedIdx = appState.reorder.draggedIndex;
+    if (draggedIdx === null || draggedIdx === undefined || draggedIdx === index) return;
+
+    const rect = itemEl.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    if (e.clientY < midY) {
+      itemEl.classList.add("drag-over-top");
+      itemEl.classList.remove("drag-over-bottom");
+    } else {
+      itemEl.classList.add("drag-over-bottom");
+      itemEl.classList.remove("drag-over-top");
+    }
+  });
+
+  itemEl.addEventListener("dragleave", () => {
+    itemEl.classList.remove("drag-over-top", "drag-over-bottom");
+  });
+
+  itemEl.addEventListener("drop", (e) => {
+    e.preventDefault();
+    itemEl.classList.remove("drag-over-top", "drag-over-bottom");
+
+    const fromIndex = appState.reorder.draggedIndex;
+    if (fromIndex === null || fromIndex === undefined) return;
+
+    const rect = itemEl.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    let targetIndex = index;
+
+    if (e.clientY >= midY && fromIndex < index) {
+      targetIndex = index;
+    } else if (e.clientY < midY && fromIndex > index) {
+      targetIndex = index;
+    }
+
+    if (fromIndex !== targetIndex) {
+      moveReorderItem(fromIndex, targetIndex);
+    }
+  });
+}
+
+function renderReorderList() {
+  const container = els.reorderVehicleList;
+  if (!container) return;
+  container.innerHTML = "";
+
+  const list = appState.reorder.currentList || [];
+  const originalList = appState.reorder.originalList || [];
+
+  let hasChanges = false;
+  const isSameVehicle = (a, b) => {
+    if (!a || !b) return false;
+    if (a.id && b.id) return a.id === b.id;
+    return (a.veiculo || a.id) === (b.veiculo || b.id);
+  };
+
+  list.forEach((v, idx) => {
+    const origItem = originalList[idx];
+    if (!origItem || !isSameVehicle(origItem, v) || origItem.dthRef !== v.dthRef) {
+      hasChanges = true;
+    }
+  });
+
+  if (els.reorderStatusHint) {
+    if (hasChanges) {
+      els.reorderStatusHint.innerHTML = `
+        <span class="reorder-changed-badge" style="color: #fbbf24; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+          <i data-lucide="alert-circle" style="width: 14px; height: 14px;"></i> Ordem modificada (não salva)
+        </span>
+      `;
+    } else {
+      els.reorderStatusHint.innerHTML = `
+        <span class="reorder-count-badge" id="reorder-total-count">${list.length} veículos na fila</span>
+      `;
+    }
+  }
+
+  list.forEach((vehicle, index) => {
+    const origItem = originalList[index];
+    const isPositionChanged = !origItem || !isSameVehicle(origItem, vehicle);
+    const origMatch = originalList.find(o => isSameVehicle(o, vehicle));
+    const isTimestampShifted = origMatch && origMatch.dthRef !== vehicle.dthRef;
+
+    const itemEl = document.createElement("div");
+    itemEl.className = `reorder-item ${isPositionChanged ? "reorder-changed" : ""}`;
+    itemEl.draggable = true;
+    itemEl.dataset.index = String(index);
+
+    const mainPlate = formatPlateString(vehicle.placa);
+    let trailersHtml = "";
+    if (vehicle.placa2) {
+      trailersHtml += `<span class="plate-badge plate-badge-trailer" style="font-size: 0.68rem;">${formatPlateString(vehicle.placa2)}</span>`;
+    }
+    if (vehicle.placa3) {
+      trailersHtml += `<span class="plate-badge plate-badge-trailer" style="font-size: 0.68rem;">${formatPlateString(vehicle.placa3)}</span>`;
+    }
+
+    const refDate = vehicle.dthRef || vehicle.created_at;
+    const timeFormatted = refDate ? formatDateTimeWithSeconds(refDate) : "—";
+    const relativeTime = refDate ? getRelativeTime(refDate) : "—";
+
+    const shiftBadgeHtml = isTimestampShifted
+      ? `<span class="reorder-item-shift-badge" title="Horário ajustado para reposicionamento na fila"><i data-lucide="clock" style="width:10px;height:10px;"></i> dthRef: ${timeFormatted} (Ajustado)</span>`
+      : `<span style="color: var(--accent);" title="dthRef: ${timeFormatted}">Ref: ${timeFormatted} (${relativeTime})</span>`;
+
+    itemEl.innerHTML = `
+      <div class="drag-handle" title="Arraste para reposicionar">
+        <i data-lucide="grip-vertical" style="width: 18px; height: 18px;"></i>
+      </div>
+      <div class="reorder-pos-badge" title="Posição ${index + 1}">
+        ${index + 1}
+      </div>
+      <div class="reorder-item-content">
+        <div class="reorder-item-header">
+          <span class="plate-badge plate-badge-main" style="font-size: 0.84rem; padding: 3px 8px;">${mainPlate}</span>
+          ${trailersHtml}
+          <span class="frota-badge ${vehicle.frota ? 'frota' : 'terceiro'}" style="font-size: 0.68rem;">
+            ${vehicle.frota ? '<i data-lucide="shield-check" style="width:10px;height:10px;"></i> Frota' : '<i data-lucide="user" style="width:10px;height:10px;"></i> Não Frota'}
+          </span>
+          ${isEmCritica(vehicle) ? '<span class="critica-indicator critica-true" style="padding: 2px 6px; font-size: 0.68rem;" title="Em Crítica"><i data-lucide="alert-circle" style="width:11px;height:11px;"></i> Crítica</span>' : ''}
+        </div>
+        <div class="reorder-item-meta">
+          <span style="font-weight: 600; color: var(--text-primary);">${vehicle.tipo || 'Tipo N/D'}</span>
+          <span>•</span>
+          <span style="color: var(--text-secondary);">${vehicle.nomeCooperado || 'Cooperado N/D'}</span>
+          <span>•</span>
+          ${shiftBadgeHtml}
+        </div>
+      </div>
+      <div class="reorder-actions">
+        <button type="button" class="btn-move-item" data-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''} title="Mover para cima">
+          <i data-lucide="chevron-up" style="width: 14px; height: 14px;"></i>
+        </button>
+        <button type="button" class="btn-move-item" data-action="down" data-index="${index}" ${index === list.length - 1 ? 'disabled' : ''} title="Mover para baixo">
+          <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
+        </button>
+      </div>
+    `;
+
+    setupReorderDragEvents(itemEl, index);
+    container.appendChild(itemEl);
+  });
+
+  // Attach button click handlers for Up/Down arrows
+  container.querySelectorAll(".btn-move-item").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      const idx = parseInt(btn.dataset.index, 10);
+      if (action === "up" && idx > 0) {
+        moveReorderItem(idx, idx - 1);
+      } else if (action === "down" && idx < list.length - 1) {
+        moveReorderItem(idx, idx + 1);
+      }
+    });
+  });
+
+  lucide.createIcons();
+}
+
+async function saveQueueReorder() {
+  if (!appState.isAdmin) {
+    Toast.show("Acesso Negado", "Apenas administradores podem reordenar veículos na fila.", "error");
+    return;
+  }
+
+  const { currentList, originalList, queueName, isSaving } = appState.reorder;
+  if (isSaving) return;
+  if (!currentList || currentList.length <= 1) return;
+
+  // Identify changed vehicles by comparing with originalList
+  const changedItems = [];
+  currentList.forEach((item, index) => {
+    const orig = originalList.find(o => (o.id && item.id ? o.id === item.id : (o.veiculo || o.id) === (item.veiculo || item.id)));
+    if (orig && orig.dthRef !== item.dthRef) {
+      changedItems.push({
+        id: item.id,
+        veiculo: item.veiculo,
+        fila: item.fila,
+        placa: item.placa,
+        dthRef: item.dthRef,
+        oldDthRef: orig.dthRef,
+        newPosition: index + 1
+      });
+    }
+  });
+
+  if (changedItems.length === 0) {
+    Toast.show("Sem alterações", "A ordem dos veículos não foi modificada.", "info");
+    closeReorderQueueModal();
+    return;
+  }
+
+  // Update UI state to saving
+  appState.reorder.isSaving = true;
+  if (els.btnReorderSave) {
+    els.btnReorderSave.disabled = true;
+  }
+  if (els.btnReorderSaveText) {
+    els.btnReorderSaveText.textContent = "Salvando...";
+  }
+
+  try {
+    // 1. Tenta atualizar em lote via RPC reordenar_fila_veiculos (grava em filaVeiculos e movimentos)
+    let rpcSuccess = false;
+    try {
+      const payload = changedItems.map(item => ({
+        id: item.id,
+        dthRef: item.dthRef,
+        motivo: `Reordenação da fila "${queueName}": placa ${item.placa || item.id} movida para posição ${item.newPosition}`
+      }));
+
+      const { data, error } = await supabaseClient.rpc("reordenar_fila_veiculos", {
+        p_updates: payload
+      });
+
+      if (!error) {
+        rpcSuccess = true;
+      } else {
+        console.warn("RPC reordenar_fila_veiculos indisponível ou retornou erro, executando gravação direta:", error);
+      }
+    } catch (rpcErr) {
+      console.warn("Erro ao invocar RPC reordenar_fila_veiculos:", rpcErr);
+    }
+
+    // 2. Fallback: Gravação direta em filaVeiculos e na tabela movimentos
+    if (!rpcSuccess) {
+      for (const item of changedItems) {
+        if (!item.id) {
+          console.warn("Item sem id de filaVeiculos:", item);
+          continue;
+        }
+
+        // 2.1. Alteração direta na tabela principal filaVeiculos
+        const { error: updateErr } = await supabaseClient
+          .from("filaVeiculos")
+          .update({ dthRef: item.dthRef })
+          .eq("id", item.id);
+
+        if (updateErr) {
+          console.error("Falha ao atualizar registro na tabela filaVeiculos:", item, updateErr);
+          throw new Error(`Erro ao atualizar veículo ${item.placa || item.id} na tabela filaVeiculos: ${updateErr.message || updateErr.details || 'Falha no banco de dados'}`);
+        }
+
+        // 2.2. Gravação do histórico na tabela movimentos
+        if (item.veiculo) {
+          try {
+            await supabaseClient
+              .from("movimentos")
+              .insert({
+                veiculo: item.veiculo,
+                fila: item.fila || null,
+                tipo: "reordenacao",
+                motivo: `Reordenação da fila "${queueName}": placa ${item.placa || item.id} movida para posição ${item.newPosition}`,
+                idRef: item.id,
+                created_at: new Date().toISOString()
+              });
+          } catch (movErr) {
+            console.warn("Aviso ao registrar histórico na tabela movimentos:", movErr);
+          }
+        }
+      }
+    }
+
+    // 3. Atualiza imediatamente o estado local appState.queues para refletir na interface
+    changedItems.forEach(ch => {
+      const target = appState.queues.find(q => (q.id && ch.id ? q.id === ch.id : (q.veiculo || q.id) === (ch.veiculo || ch.id)));
+      if (target) {
+        target.dthRef = ch.dthRef;
+      }
+    });
+
+    // Re-filtra e re-renderiza o grid imediatamente
+    applyFiltersAndRender();
+    updateStats();
+
+    Toast.show(
+      "Fila Reordenada!",
+      `A fila "${queueName}" foi reordenada com sucesso na tabela filaVeiculos. ${changedItems.length} veículo(s) atualizado(s).`,
+      "success"
+    );
+
+    closeReorderQueueModal();
+
+    // Sincroniza silenciosamente com o servidor
+    loadQueuesData(false);
+
+  } catch (error) {
+    console.error("Erro ao reordenar filaVeiculos:", error);
+    Toast.show("Erro ao salvar ordem", error.message || "Não foi possível salvar a nova ordem.", "error");
+  } finally {
+    appState.reorder.isSaving = false;
+    if (els.btnReorderSave) {
+      els.btnReorderSave.disabled = false;
+    }
+    if (els.btnReorderSaveText) {
+      els.btnReorderSaveText.textContent = "Salvar Nova Ordem";
+    }
   }
 }
 
@@ -4188,9 +4700,21 @@ function renderMovementsTimeline(data) {
 
   data.forEach(item => {
     const isProgramado = item.tipo === "programado";
-    const typeClass = isProgramado ? "programado" : "retirada";
-    const badgeIcon = isProgramado ? "calendar" : "truck";
-    const actionLabel = isProgramado ? "Programado" : "Retirada";
+    const isReordenacao = item.tipo === "reordenacao";
+    let typeClass = "retirada";
+    let badgeIcon = "truck";
+    let actionLabel = "Retirada";
+
+    if (isProgramado) {
+      typeClass = "programado";
+      badgeIcon = "calendar";
+      actionLabel = "Programado";
+    } else if (isReordenacao) {
+      typeClass = "reordenacao";
+      badgeIcon = "arrow-up-down";
+      actionLabel = "Reordenação";
+    }
+
     const locationName = item.none || item.nome || "Fila não identificada";
 
     const itemEl = document.createElement("div");
